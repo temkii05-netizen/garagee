@@ -117,8 +117,9 @@ function openForm(title,fields,init,save){
     if(type==='check'){var l=el('label','c');inp=document.createElement('input');inp.type='checkbox';inp.checked=!!(init&&init[k]);l.appendChild(inp);l.appendChild(document.createTextNode(lab));b.appendChild(l)}
     else{
       b.appendChild(el('label','',lab));
-      inp=document.createElement(type==='area'?'textarea':'input');
-      if(type!=='area')inp.type=type;
+      inp=document.createElement(type==='area'?'textarea':type==='sel'?'select':'input');
+      if(type==='sel'){f[5].forEach(function(o){var op=el('option','',o);op.value=o;inp.appendChild(op)})}
+      else if(type!=='area')inp.type=type;
       if(type==='number')inp.inputMode='decimal';
       inp.value=(init&&init[k]!=null)?init[k]:(f[3]||'');
       if(f[4])inp.placeholder=f[4];
@@ -143,9 +144,11 @@ $('#m').onclick=function(e){if(e.target.id==='m')$('#m').classList.remove('on')}
 
 function curAtv(){var a=by('atv');if(!a.length)return null;return a.find(function(x){return x.id===S.atv})||a[0]}
 
+function icon(a){return {'Питбайк':'🏍️','Эндуро':'🏁'}[a.kind]||'🛞'}
 function atvForm(a){
-  openForm(a?'Изменить квадроцикл':'Новый квадроцикл',[
-    ['name','Название','text','','Например: CFMOTO 520'],
+  openForm(a?'Изменить технику':'Новая техника',[
+    ['kind','Тип','sel','','',['Квадроцикл','Питбайк','Эндуро']],
+    ['name','Название','text','','Например: CFMOTO 520, KTM 300'],
     ['odo','Пробег / моточасы сейчас','number'],
     ['unit','Единица (км или м/ч)','text','км'],
     ['interval','Интервал планового ТО','number','','Например: 1000']
@@ -183,18 +186,18 @@ function render(){
   var app=$('#app');app.textContent='';migBanner(app);
   var atvs=by('atv'),a=curAtv();
   if(!a){
-    var e=el('div','empty');e.appendChild(el('p','','Добавьте свой первый квадроцикл, чтобы вести журнал обслуживания.'));
-    var b=el('button','','+ Добавить квадроцикл');b.onclick=function(){atvForm()};e.appendChild(b);app.appendChild(e);return;
+    var e=el('div','empty');e.appendChild(el('p','','Добавьте свою технику (квадроцикл, питбайк или эндуро), чтобы вести журнал обслуживания.'));
+    var b=el('button','','+ Добавить технику');b.onclick=function(){atvForm()};e.appendChild(b);app.appendChild(e);return;
   }
   S.atv=a.id;
   var sel=document.createElement('select');
-  atvs.forEach(function(x){var o=el('option','',x.name);o.value=x.id;if(x.id===a.id)o.selected=true;sel.appendChild(o)});
+  atvs.forEach(function(x){var o=el('option','',icon(x)+' '+x.name);o.value=x.id;if(x.id===a.id)o.selected=true;sel.appendChild(o)});
   sel.onchange=function(){S.atv=sel.value;render()};
   var tp=el('div','top');
-  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src='/_blob/'+a.photo;av.appendChild(aim)}else av.textContent='🏍️';
-  av.title='Фото квадроцикла';av.onclick=function(){atvPhoto(a)};tp.appendChild(av);tp.appendChild(sel);
+  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src='/_blob/'+a.photo;av.appendChild(aim)}else av.textContent=icon(a);
+  av.title='Фото техники';av.onclick=function(){atvPhoto(a)};tp.appendChild(av);tp.appendChild(sel);
   var eb=el('button','g','✎');eb.onclick=function(){atvForm(a)};tp.appendChild(eb);
-  var nb=el('button','g','+');nb.title='Новый квадроцикл';nb.onclick=function(){atvForm()};tp.appendChild(nb);
+  var nb=el('button','g','+');nb.title='Новая техника';nb.onclick=function(){atvForm()};tp.appendChild(nb);
   app.appendChild(tp);
   document.querySelector('.wrap').style.maxWidth=S.tab==='gal'?'1100px':'720px';
 
@@ -431,8 +434,8 @@ function renderAdmin(app){
     if(pf.lastSeen){var d=new Date(pf.lastSeen);c.appendChild(el('div','mut','Последний вход: '+d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})))}
     var n=function(t){return o.items.filter(function(i){return i.t===t})};
     var av=n('atv');
-    if(!av.length)c.appendChild(el('div','mut','Квадроциклов пока нет.'));
-    av.forEach(function(a){var ch=el('span','chip','🏍️ '+a.name+(a.odo?' · '+a.odo+' '+a.unit:''));c.appendChild(ch)});
+    if(!av.length)c.appendChild(el('div','mut','Техники пока нет.'));
+    av.forEach(function(a){var ch=el('span','chip',icon(a)+' '+a.name+(a.odo?' · '+a.odo+' '+a.unit:''));c.appendChild(ch)});
     c.appendChild(el('div','mut','Записей: '+n('rec').length+' · запчастей: '+n('part').length+' · в галерее: '+n('media').length)).style.marginTop='6px';
     app.appendChild(c);
   });
