@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#d9531e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Гараж">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Гараж: квадроциклы</title>
+<style>
+:root{--bg:#f4f2ee;--card:#fff;--tx:#1d1d1b;--mut:#6f6b63;--ac:#d9531e;--acx:#fff;--bd:#e3dfd7;--ok:#2e7d4f;--warn:#c77d00;--bad:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171715;--card:#232320;--tx:#f0ede6;--mut:#9a958a;--ac:#f0703a;--acx:#1a1a18;--bd:#35332e;--ok:#5cc08a;--warn:#e8a93a;--bad:#e8685a;color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:0}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+select,input,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;width:100%}
+textarea{min-height:70px;resize:vertical}
+button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:var(--ac);color:var(--acx);font-weight:600;cursor:pointer}
+button.g{background:transparent;color:var(--mut);border:1px solid var(--bd);font-weight:500;padding:6px 10px;font-size:14px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;background:var(--card);color:var(--mut);border:1px solid var(--bd)}
+.tabs button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.mut{color:var(--mut);font-size:14px}
+.chip{display:inline-block;background:var(--bg);border:1px solid var(--bd);border-radius:999px;padding:2px 10px;margin:4px 4px 0 0;font-size:13px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat div{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:18px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.acts{display:flex;gap:6px;margin-top:8px}
+.add{width:100%;margin-bottom:12px}
+#m{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:5}
+#m.on{display:flex}
+#mb{background:var(--bg);width:100%;max-width:720px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+label.c{display:flex;gap:8px;align-items:center;color:var(--tx);font-size:16px}
+label.c input{width:auto}
+.empty{text-align:center;color:var(--mut);padding:30px 10px}
+.thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;margin:0 6px 6px 0;border:1px solid var(--bd);vertical-align:middle;cursor:pointer}
+.tabs button{padding:10px 4px;font-size:15px}
+.av{flex:0 0 64px;width:64px;height:64px;border-radius:14px;overflow:hidden;background:var(--card);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer}
+.av img{width:100%;height:100%;object-fit:cover}
+.top select{min-width:0}
+.fb{display:flex;gap:6px;margin-bottom:10px}.fb select{flex:1;padding:8px;min-width:0}.fb button{white-space:nowrap}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.gi{padding:8px;margin:0}.gi video,.gi img{display:block;width:100%;max-height:60vh;object-fit:contain;border-radius:10px;background:#000}
+.done{text-decoration:line-through;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>🏍️ Гараж</h1><span class="mut" id="sync"></span></div>
+  <div id="app"></div>
+  <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
+    <button class="g" onclick="installHelp()">📲 Установить как приложение</button>
+    <div style="margin-top:8px">Данные хранятся только на этом устройстве, в браузере. Не очищайте данные сайта, иначе записи пропадут.</div>
+  </div>
+</div>
+<div id="m"><div id="mb"></div></div>
+<script>
+var ME={owner:false},ADM={},items=[],col=null,assets=null,S={tab:'log',atv:null,y:'',m:'',asc:false};
+var $=function(s){return document.querySelector(s)};
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fdate(s){if(!s)return'';var p=s.split('-');return p[2]+'.'+p[1]+'.'+p[0]}
+function money(n){return n?Number(n).toLocaleString('ru-RU')+' ₽':'0 ₽'}
+function strip(o){var c=Object.assign({},o);delete c.id;return c}
+function by(t){return items.filter(function(i){return i.t===t})}
+
+/* ---------- storage ---------- */
+function lsGet(){try{return JSON.parse(localStorage.getItem('atv')||'[]')}catch(e){return[]}}
+function lsSet(){try{localStorage.setItem('atv',JSON.stringify(items))}catch(e){}}
+function put(id,data){
+  data=strip(data);data.updated=Date.now();
+  if(col){col.doc(id).set(data).catch(function(){$('#sync').textContent='ошибка сохранения'})}
+  else{var o=Object.assign({id:id},data),i=items.findIndex(function(x){return x.id===id});if(i>=0)items[i]=o;else items.push(o);lsSet();render()}
+}
+function del(id){
+  if(col){col.doc(id).delete()}
+  else{items=items.filter(function(x){return x.id!==id});lsSet();render()}
+}
+async function init(){
+  try{
+    if(window.claude){
+      var db=await claude.use('db'),user=await claude.use('user');
+      try{assets=await claude.use('assets')}catch(e){}
+      var id=user&&await user.id();
+      if(db&&id){
+        ME.uid=id;ME.db=db;ME.user=user;ME.owner=!!(user.isOwner&&user.isOwner());
+        col=db.collection('garage/'+id+'/d');
+        trackVisit(db,id);
+        if(ME.owner)startAdmin();
+        db.collection('data/users/'+id).get().then(function(o){S.mig=o.docs;render()}).catch(function(){});
+        col.onSnapshot(function(s){
+          items=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+          $('#sync').textContent='☁️ сохранено';render();
+        },function(){});
+        return;
+      }
+    }
+  }catch(e){}
+  items=lsGet();$('#sync').textContent='💾 только в этом браузере';render();
+}
+
+/* ---------- forms ---------- */
+function openForm(title,fields,init,save){
+  var b=$('#mb');b.textContent='';b.appendChild(el('h1','',title));
+  var ins={};
+  fields.forEach(function(f){
+    var k=f[0],lab=f[1],type=f[2],inp;
+    if(type==='check'){var l=el('label','c');inp=document.createElement('input');inp.type='checkbox';inp.checked=!!(init&&init[k]);l.appendChild(inp);l.appendChild(document.createTextNode(lab));b.appendChild(l)}
+    else{
+      b.appendChild(el('label','',lab));
+      inp=document.createElement(type==='area'?'textarea':'input');
+      if(type!=='area')inp.type=type;
+      if(type==='number')inp.inputMode='decimal';
+      inp.value=(init&&init[k]!=null)?init[k]:(f[3]||'');
+      if(f[4])inp.placeholder=f[4];
+      b.appendChild(inp);
+    }
+    ins[k]=[inp,type];
+  });
+  var r=el('div','acts');
+  var ok=el('button','','Сохранить'),no=el('button','g','Отмена');
+  no.onclick=function(){$('#m').classList.remove('on')};
+  ok.onclick=function(){
+    var d={};
+    for(var k in ins){var i=ins[k][0],t=ins[k][1];d[k]=t==='check'?i.checked:t==='number'?(i.value===''?'':Number(i.value)):i.value.trim()}
+    if(!d[fields[0][0]]&&fields[0][2]!=='number'){i0(ins[fields[0][0]][0]);return}
+    $('#m').classList.remove('on');save(d);
+  };
+  r.appendChild(ok);r.appendChild(no);b.appendChild(r);
+  $('#m').classList.add('on');
+}
+function i0(i){i.style.borderColor='var(--bad)';i.focus()}
+$('#m').onclick=function(e){if(e.target.id==='m')$('#m').classList.remove('on')};
+
+function curAtv(){var a=by('atv');if(!a.length)return null;return a.find(function(x){return x.id===S.atv})||a[0]}
+
+function atvForm(a){
+  openForm(a?'Изменить квадроцикл':'Новый квадроцикл',[
+    ['name','Название','text','','Например: CFMOTO 520'],
+    ['odo','Пробег / моточасы сейчас','number'],
+    ['unit','Единица (км или м/ч)','text','км'],
+    ['interval','Интервал планового ТО','number','','Например: 1000']
+  ],a,function(d){var id=a?a.id:uid();put(id,Object.assign({},a||{},d,{t:'atv'}));if(!a)S.atv=id})
+}
+function recForm(r,pre){
+  var a=curAtv();
+  openForm(r?'Изменить запись':'Новая запись обслуживания',[
+    ['title','Что делал','text','','Замена масла, ремонт ступицы…'],
+    ['date','Дата','date',today()],
+    ['odo','Пробег / м/ч ('+a.unit+')','number',a.odo||''],
+    ['parts','Что заменил (через запятую или с новой строки)','area','','Масло 10W-40, фильтр масляный'],
+    ['cost','Стоимость, ₽','number'],
+    ['std','Это плановое ТО','check'],
+    ['notes','Заметки','area']
+  ],r||pre,function(d){
+    var o=r||pre||{};d.photos=o.photos||[];
+    d.t='rec';d.atv=a.id;put(r?r.id:uid(),d);
+    if(d.odo!==''&&d.odo>(a.odo||0)){put(a.id,Object.assign({},a,{odo:d.odo}))}
+  })
+}
+function partForm(p){
+  var a=curAtv();
+  openForm(p?'Изменить запчасть':'Новая запчасть',[
+    ['name','Название','text','','Свечи, тормозные колодки…'],
+    ['num','Артикул / номер детали','text'],
+    ['shop','Где покупал','text'],
+    ['price','Цена, ₽','number'],
+    ['notes','Заметки (совместимость, аналоги)','area']
+  ],p,function(d){d.t='part';d.atv=a.id;d.added=(p&&p.added)||today();d.photos=(p&&p.photos)||[];put(p?p.id:uid(),d)})
+}
+
+/* ---------- render ---------- */
+function render(){
+  var app=$('#app');app.textContent='';migBanner(app);
+  var atvs=by('atv'),a=curAtv();
+  if(!a){
+    var e=el('div','empty');e.appendChild(el('p','','Добавьте свой первый квадроцикл, чтобы вести журнал обслуживания.'));
+    var b=el('button','','+ Добавить квадроцикл');b.onclick=function(){atvForm()};e.appendChild(b);app.appendChild(e);return;
+  }
+  S.atv=a.id;
+  var sel=document.createElement('select');
+  atvs.forEach(function(x){var o=el('option','',x.name);o.value=x.id;if(x.id===a.id)o.selected=true;sel.appendChild(o)});
+  sel.onchange=function(){S.atv=sel.value;render()};
+  var tp=el('div','top');
+  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src='/_blob/'+a.photo;av.appendChild(aim)}else av.textContent='🏍️';
+  av.title='Фото квадроцикла';av.onclick=function(){atvPhoto(a)};tp.appendChild(av);tp.appendChild(sel);
+  var eb=el('button','g','✎');eb.onclick=function(){atvForm(a)};tp.appendChild(eb);
+  var nb=el('button','g','+');nb.title='Новый квадроцикл';nb.onclick=function(){atvForm()};tp.appendChild(nb);
+  app.appendChild(tp);
+  document.querySelector('.wrap').style.maxWidth=S.tab==='gal'?'1100px':'720px';
+
+  var recs=by('rec').filter(function(r){return r.atv===a.id}).sort(function(x,y){return (y.date||'').localeCompare(x.date||'')||(y.updated||0)-(x.updated||0)});
+  var parts=by('part').filter(function(p){return p.atv===a.id}).sort(function(x,y){return x.name.localeCompare(y.name,'ru')});
+
+  var st=el('div','stat');
+  function sbox(v,l,c){var d=el('div');var b=el('b',c||'',v);d.appendChild(b);d.appendChild(el('span','mut',l));st.appendChild(d)}
+  sbox((a.odo||0).toLocaleString('ru-RU')+' '+a.unit,'сейчас');
+  var lastTO=recs.find(function(r){return r.std&&r.odo!==''});
+  if(a.interval&&lastTO){
+    var left=lastTO.odo+a.interval-(a.odo||0);
+    sbox(left>=0?left+' '+a.unit:'просрочено '+(-left),'до след. ТО',left<0?'bad':left<a.interval*0.1?'warn':'ok');
+  }else sbox('—','до след. ТО');
+  var year=String(new Date().getFullYear());
+  var tot=recs.reduce(function(s,r){return s+(Number(r.cost)||0)},0);
+  var ty=recs.filter(function(r){return (r.date||'').indexOf(year)===0}).reduce(function(s,r){return s+(Number(r.cost)||0)},0);
+  sbox(money(tot),'всего ('+money(ty)+' в '+year+')');
+  app.appendChild(st);
+
+  var tabs=el('div','tabs');
+  [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]);b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
+  app.appendChild(tabs);
+  if(S.tab!=='adm')filterBar(app);
+
+  if(S.tab==='log'){
+    var ab=el('button','add','+ Запись об обслуживании');ab.onclick=function(){recForm()};app.appendChild(ab);
+    var fr=flt(recs);
+    if(!fr.length)app.appendChild(el('div','empty','Нет записей за выбранный период.'));
+    else app.appendChild(el('div','mut','Записей: '+fr.length+' · '+money(fr.reduce(function(s,r){return s+(Number(r.cost)||0)},0)))).style.marginBottom='8px';
+    fr.forEach(function(r){
+      var c=el('div','card'),rw=el('div','row');
+      rw.appendChild(el('b','',(r.std?'🔧 ':'')+r.title));
+      rw.appendChild(el('span','mut',fdate(r.date)));c.appendChild(rw);
+      var meta=[];if(r.odo!=='')meta.push(r.odo+' '+a.unit);if(r.cost)meta.push(money(r.cost));
+      if(meta.length)c.appendChild(el('div','mut',meta.join(' · ')));
+      (r.parts||'').split(/[,\n]+/).map(function(s){return s.trim()}).filter(Boolean).forEach(function(s){c.appendChild(el('span','chip',s))});
+      if(r.notes)c.appendChild(el('div','mut',r.notes)).style.marginTop='6px';
+      photoStrip(r,c);
+      var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+      e1.onclick=function(){recForm(r)};d1.onclick=function(){if(confirm('Удалить запись?'))del(r.id)};
+      ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
+    });
+  }else if(S.tab==='buy'){renderBuy(app,a)}else if(S.tab==='gal'){renderGal(app,a)}else if(S.tab==='adm'&&ME.owner){renderAdmin(app)}else{
+    var pb=el('button','add','+ Запчасть');pb.onclick=function(){partForm()};app.appendChild(pb);
+    var fp=flt(parts);
+    if(!fp.length)app.appendChild(el('div','empty','Здесь будут артикулы, цены и заметки по запчастям.'));
+    fp.forEach(function(p){
+      var c=el('div','card'),rw=el('div','row');
+      rw.appendChild(el('b','',p.name));if(p.price)rw.appendChild(el('span','',money(p.price)));c.appendChild(rw);
+      var meta=[];if(p.num)meta.push('№ '+p.num);if(p.shop)meta.push(p.shop);
+      if(meta.length)c.appendChild(el('div','mut',meta.join(' · ')));
+      var nm=p.name.toLowerCase();
+      var lr=recs.find(function(r){return (r.parts||'').toLowerCase().indexOf(nm)>=0});
+      if(lr)c.appendChild(el('div','mut','Последняя замена: '+fdate(lr.date)+(lr.odo!==''?' ('+lr.odo+' '+a.unit+')':'')));
+      if(p.notes)c.appendChild(el('div','mut',p.notes)).style.marginTop='6px';
+      photoStrip(p,c);
+      var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+      e1.onclick=function(){partForm(p)};d1.onclick=function(){if(confirm('Удалить запчасть?'))del(p.id)};
+      var bb=el('button','g','🛒 Купить');bb.onclick=function(){put(uid(),{t:'buy',atv:a.id,name:p.name,qty:1,added:today(),price:p.price||'',notes:p.num?'№ '+p.num:'',done:false});S.tab='buy';render()};ac.appendChild(bb);
+      ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
+    });
+  }
+}
+/* ---------- photos ---------- */
+function photoStrip(it,c){
+  var w=el('div');w.style.marginTop='6px';
+  (it.photos||[]).forEach(function(id){var im=document.createElement('img');im.src='/_blob/'+id;im.className='thumb';im.onclick=function(){showPhoto(it,id)};w.appendChild(im)});
+  if(assets&&col){var b=el('button','g','📷 Фото');b.onclick=function(){addPhoto(it,b)};w.appendChild(b)}
+  if(w.childNodes.length)c.appendChild(w);
+}
+async function shrink(file){
+  try{var bm=await createImageBitmap(file);var k=Math.min(1,1400/Math.max(bm.width,bm.height));var cv=document.createElement('canvas');cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);cv.getContext('2d').drawImage(bm,0,0,cv.width,cv.height);
+    return await new Promise(function(res){cv.toBlob(function(b){res(b||file)},'image/jpeg',0.82)})}catch(e){return file}
+}
+function addPhoto(it,btn){
+  var f=document.createElement('input');f.type='file';f.accept='image/*';
+  f.onchange=async function(){
+    var file=f.files[0];if(!file)return;btn.textContent='Загрузка…';
+    try{var blob=await shrink(file);var r=await assets.upload(blob);put(it.id,Object.assign({},it,{photos:(it.photos||[]).concat(r.id)}))}
+    catch(e){btn.textContent='📷 Фото';alert('Не удалось загрузить фото')}
+  };
+  f.click();
+}
+function showPhoto(it,id){
+  var b=$('#mb');b.textContent='';
+  var im=document.createElement('img');im.src='/_blob/'+id;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
+  var r=el('div','acts'),cl=el('button','','Закрыть'),dl=el('button','g','Удалить фото');
+  cl.onclick=function(){$('#m').classList.remove('on')};
+  dl.onclick=function(){if(!confirm('Удалить фото?'))return;$('#m').classList.remove('on');put(it.id,Object.assign({},it,{photos:(it.photos||[]).filter(function(x){return x!==id})}));if(assets)assets.delete(id).catch(function(){})};
+  r.appendChild(cl);r.appendChild(dl);b.appendChild(r);$('#m').classList.add('on');
+}
+
+/* ---------- список покупок ---------- */
+function buyForm(a,b){
+  openForm(b?'Изменить':'Что купить',[
+    ['name','Название','text','','Масляный фильтр'],
+    ['qty','Количество','number',1],
+    ['price','Цена за штуку, ₽','number'],
+    ['notes','Заметки (артикул, магазин)','area']
+  ],b,function(d){d.t='buy';d.atv=a.id;d.added=(b&&b.added)||today();d.done=b?!!b.done:false;put(b?b.id:uid(),d)});
+}
+function renderBuy(app,a){
+  var ab=el('button','add','+ Добавить в список');ab.onclick=function(){buyForm(a)};app.appendChild(ab);
+  var l=flt(by('buy').filter(function(x){return x.atv===a.id})).sort(function(x,y){return (x.done?1:0)-(y.done?1:0)});
+  if(!l.length){app.appendChild(el('div','empty','Список пуст. Запчасти можно добавлять сюда кнопкой «🛒 Купить» на вкладке «Запчасти».'));return}
+  var sum=0;l.forEach(function(x){if(!x.done)sum+=(Number(x.price)||0)*(Number(x.qty)||1)});
+  if(sum)app.appendChild(el('div','mut','Итого к покупке: '+money(sum))).style.marginBottom='8px';
+  l.forEach(function(x){
+    var c=el('div','card'),rw=el('div','row'),lb=el('label','c'),cb=document.createElement('input');
+    lb.style.margin='0';cb.type='checkbox';cb.checked=!!x.done;
+    cb.onchange=function(){put(x.id,Object.assign({},x,{done:cb.checked}))};
+    lb.appendChild(cb);lb.appendChild(el('span',x.done?'done':'',x.name+(x.qty>1?' × '+x.qty:'')));
+    rw.appendChild(lb);if(x.price)rw.appendChild(el('span','mut',money(x.price*(x.qty||1))));
+    c.appendChild(rw);
+    if(x.notes)c.appendChild(el('div','mut',x.notes)).style.marginTop='4px';
+    var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+    e1.onclick=function(){buyForm(a,x)};d1.onclick=function(){del(x.id)};
+    ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
+  });
+  if(l.some(function(x){return x.done})){
+    var cl=el('button','g','Убрать купленные');
+    cl.onclick=function(){l.filter(function(x){return x.done}).forEach(function(x){del(x.id)})};
+    app.appendChild(cl);
+  }
+}
+
+/* ---------- фильтр по датам ---------- */
+function idate(x){return x.date||x.added||(x.updated?new Date(x.updated).toISOString().slice(0,10):'')}
+function flt(list){
+  return list.filter(function(x){var d=idate(x);return (!S.y||d.slice(0,4)===S.y)&&(!S.m||d.slice(5,7)===S.m)})
+    .sort(function(x,y){var c=idate(x).localeCompare(idate(y));return S.asc?c:-c});
+}
+function filterBar(app){
+  var ys={};items.forEach(function(x){var d=idate(x);if(d)ys[d.slice(0,4)]=1});
+  var w=el('div','fb'),sy=document.createElement('select'),sm=document.createElement('select');
+  function opt(s,v,t,cur){var o=el('option','',t);o.value=v;if(v===cur)o.selected=true;s.appendChild(o)}
+  opt(sy,'','Все годы',S.y);Object.keys(ys).sort().reverse().forEach(function(y){opt(sy,y,y,S.y)});
+  ['Все месяцы','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'].forEach(function(n,i){opt(sm,i?String(i).padStart(2,'0'):'',n,S.m)});
+  sy.onchange=function(){S.y=sy.value;render()};sm.onchange=function(){S.m=sm.value;render()};
+  var so=el('button','g',S.asc?'↑ старые':'↓ новые');so.onclick=function(){S.asc=!S.asc;render()};
+  w.appendChild(sy);w.appendChild(sm);w.appendChild(so);app.appendChild(w);
+}
+
+/* ---------- фото квадроцикла ---------- */
+function pickAtvPhoto(a){
+  if(!(assets&&col)){alert('В этой версии фото недоступны');return}
+  var f=document.createElement('input');f.type='file';f.accept='image/*';
+  f.onchange=async function(){
+    var file=f.files[0];if(!file)return;$('#sync').textContent='загрузка фото…';
+    try{var r=await assets.upload(await shrink(file));var old=a.photo;put(a.id,Object.assign({},a,{photo:r.id}));if(old)assets.delete(old).catch(function(){})}
+    catch(e){alert('Не удалось загрузить фото');$('#sync').textContent=''}
+  };
+  f.click();
+}
+function atvPhoto(a){
+  if(!a.photo){pickAtvPhoto(a);return}
+  var b=$('#mb');b.textContent='';
+  var im=document.createElement('img');im.src='/_blob/'+a.photo;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
+  var r=el('div','acts'),cl=el('button','','Закрыть'),rp=el('button','g','Заменить фото');
+  cl.onclick=function(){$('#m').classList.remove('on')};
+  rp.onclick=function(){$('#m').classList.remove('on');pickAtvPhoto(a)};
+  r.appendChild(cl);r.appendChild(rp);b.appendChild(r);$('#m').classList.add('on');
+}
+
+/* ---------- галерея ---------- */
+function mediaMeta(a,x){return [fdate(x.date),(by('atv').find(function(q){return q.id===x.atv})||{}).name].filter(Boolean).join(' · ')}
+function addMedia(a){
+  if(!(assets&&col)){alert('В этой версии фото и видео недоступны');return}
+  var f=document.createElement('input');f.type='file';f.accept='video/*,image/*';
+  f.onchange=function(){
+    var file=f.files[0];if(!file)return;
+    var vid=file.type.indexOf('video')===0;
+    if(file.size>20*1024*1024&&vid){alert('Видео '+Math.round(file.size/1048576)+' МБ — лимит 20 МБ на файл. Обрежьте или сожмите ролик.');return}
+    openForm('Новое в галерее',[['title','Название','text','','Покатушки в лесу'],['date','Дата','date',today()],['notes','Заметки','area']],null,function(d){
+      $('#sync').textContent='загрузка…';
+      (vid?Promise.resolve(file):shrink(file)).then(function(b){return assets.upload(b)}).then(function(r){
+        d.t='media';d.atv=a.id;d.kind=vid?'video':'image';d.file=r.id;put(uid(),d);
+      }).catch(function(){alert('Не удалось загрузить файл (возможно, он больше 20 МБ)');$('#sync').textContent=''});
+    });
+  };
+  f.click();
+}
+function renderGal(app,a){
+  var ab=el('button','add','+ Добавить видео или фото');ab.onclick=function(){addMedia(a)};app.appendChild(ab);
+  var l=flt(by('media'));
+  if(!l.length){app.appendChild(el('div','empty','Здесь будут видео и фото покатушек. Лимит — 20 МБ на файл.'));return}
+  var g=el('div','gal');
+  l.forEach(function(x){
+    var c=el('div','card gi'),m;
+    if(x.kind==='video'){m=document.createElement('video');m.src='/_blob/'+x.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
+    else{m=document.createElement('img');m.src='/_blob/'+x.file;m.onclick=function(){var b=$('#mb');b.textContent='';var im=document.createElement('img');im.src=m.src;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);var cl=el('button','','Закрыть');cl.style.marginTop='10px';cl.onclick=function(){$('#m').classList.remove('on')};b.appendChild(cl);$('#m').classList.add('on')}}
+    c.appendChild(m);
+    var t=el('div','',x.title);t.style.cssText='font-weight:600;margin-top:6px';c.appendChild(t);
+    c.appendChild(el('div','mut',mediaMeta(a,x)));
+    if(x.notes)c.appendChild(el('div','mut',x.notes));
+    var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+    e1.onclick=function(){openForm('Изменить',[['title','Название','text'],['date','Дата','date'],['notes','Заметки','area']],x,function(d){put(x.id,Object.assign({},x,d))})};
+    d1.onclick=function(){if(confirm('Удалить из галереи?')){del(x.id);if(assets)assets.delete(x.file).catch(function(){})}};
+    ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);g.appendChild(c);
+  });
+  app.appendChild(g);
+}
+
+/* ---------- участники, установка, перенос ---------- */
+function trackVisit(db,id){
+  var pr=db.collection('garage').doc(id);
+  pr.get().then(function(sn){var d=(sn.exists&&sn.data())||{};
+    return pr.set({visits:(d.visits||0)+1,first:d.first||Date.now(),lastSeen:Date.now()})}).catch(function(){});
+}
+function startAdmin(){
+  ME.db.collection('garage').onSnapshot(function(s){
+    s.docs.forEach(function(d){
+      var u=d.id,o=ADM[u]||(ADM[u]={items:[]});o.prof=d.data();
+      if(!o.sub){o.sub=1;ME.db.collection('garage/'+u+'/d').onSnapshot(function(q){
+        o.items=q.docs.map(function(x){return x.data()});if(S.tab==='adm')render()},function(){})}
+    });
+    ME.user.profiles(Object.keys(ADM)).then(function(ps){
+      for(var k in ps){if(ADM[k])ADM[k].name=ps[k]&&ps[k].name||''}
+      if(S.tab==='adm')render();
+    }).catch(function(){});
+    if(S.tab==='adm')render();
+  },function(){});
+}
+function renderAdmin(app){
+  app.appendChild(el('div','mut','Участники, которые заходили в приложение и сохраняли данные.')).style.marginBottom='8px';
+  var ids=Object.keys(ADM).sort(function(x,y){return ((ADM[y].prof||{}).lastSeen||0)-((ADM[x].prof||{}).lastSeen||0)});
+  if(!ids.length){app.appendChild(el('div','empty','Пока никого нет.'));return}
+  ids.forEach(function(u){
+    var o=ADM[u],pf=o.prof||{},c=el('div','card'),rw=el('div','row');
+    var nm=(o.name||'Участник '+u.slice(0,4))+(u===ME.uid?' (вы)':'');
+    rw.appendChild(el('b','',nm));
+    rw.appendChild(el('span','mut','заходов: '+(pf.visits||0)));c.appendChild(rw);
+    if(pf.lastSeen){var d=new Date(pf.lastSeen);c.appendChild(el('div','mut','Последний вход: '+d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})))}
+    var n=function(t){return o.items.filter(function(i){return i.t===t})};
+    var av=n('atv');
+    if(!av.length)c.appendChild(el('div','mut','Квадроциклов пока нет.'));
+    av.forEach(function(a){var ch=el('span','chip','🏍️ '+a.name+(a.odo?' · '+a.odo+' '+a.unit:''));c.appendChild(ch)});
+    c.appendChild(el('div','mut','Записей: '+n('rec').length+' · запчастей: '+n('part').length+' · в галерее: '+n('media').length)).style.marginTop='6px';
+    app.appendChild(c);
+  });
+}
+function installHelp(){
+  var b=$('#mb');b.textContent='';b.appendChild(el('h1','','Как установить'));
+  [['iPhone (Safari)','Нажмите «Поделиться» → «На экран “Домой”».'],['Android (Chrome)','Меню ⋮ → «Установить приложение» или «Добавить на главный экран».'],['Компьютер','В Chrome нажмите значок установки в адресной строке или закрепите вкладку.']].forEach(function(t){
+    var c=el('div','card');c.appendChild(el('b','',t[0]));c.appendChild(el('div','mut',t[1]));b.appendChild(c)});
+  b.appendChild(el('div','mut','Иконка откроет приложение в один тап, как обычное. Работает без аккаунта.'));
+  var cl=el('button','','Закрыть');cl.style.marginTop='10px';cl.onclick=function(){$('#m').classList.remove('on')};b.appendChild(cl);$('#m').classList.add('on');
+}
+function migBanner(app){
+  if(!(col&&S.mig&&S.mig.length&&!items.length))return;
+  var c=el('div','card');c.appendChild(el('b','','Найдены данные из старой версии'));
+  var bt=el('button','add','Перенести ('+S.mig.length+')');bt.style.marginTop='8px';bt.style.marginBottom='0';
+  bt.onclick=function(){bt.textContent='Переношу…';S.mig.forEach(function(d){col.doc(d.id).set(d.data())});S.mig=null};
+  c.appendChild(bt);app.appendChild(c);
+}
+
+init();
+</script>
+</body>
+</html>
