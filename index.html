@@ -76,7 +76,7 @@ function strip(o){var c=Object.assign({},o);delete c.id;return c}
 function by(t){return items.filter(function(i){return i.t===t})}
 
 /* ---------- storage (Supabase) ---------- */
-var SUPA_URL='https://hbupbauthjdwhzxpzhwn.supabase.co/functions/v1/tg-auth';          // https://xxxx.supabase.co
+var SUPA_URL='https://hbupbauthjdwhzxpzhwn.supabase.co;          // https://xxxx.supabase.co
 var SUPA_KEY='sb_publishable_MYhXjEqGmyyx7zXg51FVDQ_kCC3jE17';
 var sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
 function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t))}
