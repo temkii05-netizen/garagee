@@ -60,7 +60,7 @@ label.c input{width:auto}
   <div id="app"></div>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">.</div>
+    <div style="margin-top:8px">by laker</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
@@ -99,21 +99,22 @@ async function upl(blob){
 }
 function rmf(path){return sb.storage.from('media').remove([path])}
 async function init(){
-  var tg=window.Telegram&&Telegram.WebApp;
+  var stage='старт',tg=window.Telegram&&Telegram.WebApp;
   if(!tg||!tg.initData){msg('Откройте приложение через Telegram: найдите своего бота и нажмите кнопку меню.');return}
   tg.ready();tg.expand();
   try{
-    sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+    stage='подключение к Supabase';sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+    stage='вход через функцию tg-auth';
     var r=await fetch(SUPA_URL+'/functions/v1/tg-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY},body:JSON.stringify({initData:tg.initData})});
     var j=await r.json();if(!r.ok||!j.access_token)throw new Error(j.error||'ошибка входа');
-    var se=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(se.error)throw se.error;
+    stage='сохранение сессии';var se=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(se.error)throw se.error;
     UID=se.data.user.id;ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
-    var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
+    stage='загрузка данных (таблица items)';var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
     ALL=q.data;items=q.data.filter(function(x){return x.owner===UID}).map(function(x){return Object.assign({id:x.id},x.data)});
     $('#sync').textContent='☁️ сохранено';
     if(ME.owner)startAdmin();
     render();
-  }catch(e){msg('Не удалось войти: '+(e.message||e))}
+  }catch(e){msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
 }
 
 /* ---------- forms ---------- */
