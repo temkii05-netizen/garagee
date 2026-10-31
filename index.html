@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<script src="config.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="theme-color" content="#d9531e">
@@ -60,12 +61,12 @@ label.c input{width:auto}
   <div id="app"></div>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">by laker</div>
+    <div style="margin-top:8px">by laker.</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
 <script>
-var ME={owner:false},ADM={},items=[],col=null,assets=null,S={tab:'log',atv:null,y:'',m:'',asc:false};
+var ME={owner:false},ADM={},items=[],col=null,assets=null,S={tab:'log',atv:null,y:'',m:'',asc:false,open:{}};
 var $=function(s){return document.querySelector(s)};
 function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -76,8 +77,7 @@ function strip(o){var c=Object.assign({},o);delete c.id;return c}
 function by(t){return items.filter(function(i){return i.t===t})}
 
 /* ---------- storage (Supabase) ---------- */
-var SUPA_URL='https://hbupbauthjdwhzxpzhwn.supabase.co';   // только адрес проекта, без /functions/...
-var SUPA_KEY='sb_publishable_MYhXjEqGmyyx7zXg51FVDQ_kCC3jE17';
+var SUPA_URL=(window.CFG||{}).url||'',SUPA_KEY=(window.CFG||{}).key||'';   // значения лежат в config.js
 SUPA_URL=SUPA_URL.replace(/\/(functions|rest|auth|storage)\/.*$/,'').replace(/\/+$/,'');
 var sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
 function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t))}
@@ -102,7 +102,9 @@ function rmf(path){return sb.storage.from('media').remove([path])}
 async function init(){
   var stage='старт',tg=window.Telegram&&Telegram.WebApp;
   if(!tg||!tg.initData){msg('Откройте приложение через Telegram: найдите своего бота и нажмите кнопку меню.');return}
-  tg.ready();tg.expand();msg('Загрузка…');
+  tg.ready();tg.expand();
+  if(!SUPA_URL||!SUPA_KEY||SUPA_KEY.indexOf('ВСТАВЬТЕ')===0){msg('Не заполнен файл config.js (адрес проекта и ключ).');return}
+  msg('Загрузка…');
   var wd=setTimeout(function(){msg('Долго нет ответа ['+stage+']. Закройте и откройте приложение заново.')},15000);
   try{
     stage='вход через функцию tg-auth';
@@ -416,31 +418,57 @@ function renderGal(app,a){
 
 /* ---------- участники, установка, перенос ---------- */
 function startAdmin(){
-  sb.from('profiles').select('*').then(function(r){
-    if(r.error)return;
-    r.data.forEach(function(p){ADM[p.id]={name:p.name||(p.username?'@'+p.username:''),
+  Promise.all([sb.from('profiles').select('*'),sb.from('items').select('id,owner,data')]).then(function(rs){
+    if(rs[0].error||rs[1].error)return;
+    ALL=rs[1].data;ADM={};
+    rs[0].data.forEach(function(p){ADM[p.id]={name:p.name||'Без имени',user:p.username?'@'+p.username:'',
       prof:{visits:p.visits,lastSeen:p.last_seen?new Date(p.last_seen).getTime():0},
-      items:ALL.filter(function(x){return x.owner===p.id}).map(function(x){return x.data})}});
+      rows:ALL.filter(function(x){return x.owner===p.id})}});
     if(S.tab==='adm')render();
   });
 }
+function fdt(ts){if(!ts)return '—';var d=new Date(ts);return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
 function renderAdmin(app){
-  app.appendChild(el('div','mut','Участники, которые заходили в приложение и сохраняли данные.')).style.marginBottom='8px';
-  var ids=Object.keys(ADM).sort(function(x,y){return ((ADM[y].prof||{}).lastSeen||0)-((ADM[x].prof||{}).lastSeen||0)});
+  var ids=Object.keys(ADM).sort(function(x,y){return ADM[y].prof.lastSeen-ADM[x].prof.lastSeen});
+  var cnt=function(t){return ALL.filter(function(x){return x.data.t===t}).length};
+  var top=el('div','row');
+  top.appendChild(el('span','mut','Участников: '+ids.length+' · техники: '+cnt('atv')+' · записей: '+cnt('rec')));
+  var rf=el('button','g','↻ Обновить');rf.onclick=function(){startAdmin()};top.appendChild(rf);
+  top.style.marginBottom='10px';app.appendChild(top);
   if(!ids.length){app.appendChild(el('div','empty','Пока никого нет.'));return}
+
+  var h=el('b','','Участники');h.style.cssText='display:block;margin:6px 0';app.appendChild(h);
   ids.forEach(function(u){
-    var o=ADM[u],pf=o.prof||{},c=el('div','card'),rw=el('div','row');
-    var nm=(o.name||'Участник '+u.slice(0,4))+(u===ME.uid?' (вы)':'');
-    rw.appendChild(el('b','',nm));
-    rw.appendChild(el('span','mut','заходов: '+(pf.visits||0)));c.appendChild(rw);
-    if(pf.lastSeen){var d=new Date(pf.lastSeen);c.appendChild(el('div','mut','Последний вход: '+d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})))}
-    var n=function(t){return o.items.filter(function(i){return i.t===t})};
+    var o=ADM[u],c=el('div','card'),rw=el('div','row');
+    var nb=el('b','',o.name+(u===UID?' (вы)':''));rw.appendChild(nb);
+    rw.appendChild(el('span','mut',(o.user?o.user+' · ':'')+'заходов: '+(o.prof.visits||0)));c.appendChild(rw);
+    c.appendChild(el('div','mut','Последний вход: '+fdt(o.prof.lastSeen)));
+    var rows=o.rows.map(function(x){return x.data}),n=function(t){return rows.filter(function(i){return i.t===t})};
     var av=n('atv');
-    if(!av.length)c.appendChild(el('div','mut','Техники пока нет.'));
-    av.forEach(function(a){var ch=el('span','chip',icon(a)+' '+a.name+(a.odo?' · '+a.odo+' '+a.unit:''));c.appendChild(ch)});
+    av.forEach(function(a){c.appendChild(el('span','chip',icon(a)+' '+a.name+(a.odo?' · '+a.odo+' '+a.unit:'')))});
     c.appendChild(el('div','mut','Записей: '+n('rec').length+' · запчастей: '+n('part').length+' · в галерее: '+n('media').length)).style.marginTop='6px';
+    var op=S.open[u],tg=el('button','g',op?'Скрыть записи':'Показать записи');tg.style.marginTop='6px';
+    tg.onclick=function(){S.open[u]=!S.open[u];render()};c.appendChild(tg);
+    if(op){
+      var rc=n('rec').sort(function(x,y){return (y.date||'').localeCompare(x.date||'')});
+      if(!rc.length)c.appendChild(el('div','mut','Записей нет.'));
+      rc.slice(0,15).forEach(function(r){
+        var a=av.find(function(q){return q.id===r.atv});
+        c.appendChild(el('div','mut',fdate(r.date)+' · '+r.title+(a?' · '+a.name:'')+(r.cost?' · '+money(r.cost):''))).style.marginTop='4px';
+      });
+    }
     app.appendChild(c);
   });
+
+  var h2=el('b','','Последние действия');h2.style.cssText='display:block;margin:14px 0 6px';app.appendChild(h2);
+  var lab={atv:'техника',rec:'запись',part:'запчасть',buy:'покупка',media:'галерея'};
+  ALL.filter(function(x){return x.data.updated&&lab[x.data.t]})
+    .sort(function(x,y){return y.data.updated-x.data.updated}).slice(0,30).forEach(function(x){
+      var d=x.data,who=(ADM[x.owner]||{}).name||'?';
+      var c=el('div','card'),rw=el('div','row');
+      rw.appendChild(el('span','',who+' · '+lab[d.t]+': '+(d.title||d.name||'')));
+      rw.appendChild(el('span','mut',fdt(d.updated)));c.appendChild(rw);app.appendChild(c);
+    });
 }
 function installHelp(){
   var b=$('#mb');b.textContent='';b.appendChild(el('h1','','Как установить'));
