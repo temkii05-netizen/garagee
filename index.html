@@ -60,7 +60,7 @@ label.c input{width:auto}
   <div id="app"></div>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">by laker</div>
+    <div style="margin-top:8px">Владелец приложения видит, кто заходит и какие квадроциклы добавлены.</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
@@ -76,8 +76,9 @@ function strip(o){var c=Object.assign({},o);delete c.id;return c}
 function by(t){return items.filter(function(i){return i.t===t})}
 
 /* ---------- storage (Supabase) ---------- */
-var SUPA_URL='https://hbupbauthjdwhzxpzhwn.supabase.co;          // https://xxxx.supabase.co
+var SUPA_URL='https://hbupbauthjdwhzxpzhwn.supabase.co';   // только адрес проекта, без /functions/...
 var SUPA_KEY='sb_publishable_MYhXjEqGmyyx7zXg51FVDQ_kCC3jE17';
+SUPA_URL=SUPA_URL.replace(/\/(functions|rest|auth|storage)\/.*$/,'').replace(/\/+$/,'');
 var sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
 function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t))}
 function mark(r){$('#sync').textContent=r&&r.error?'ошибка сохранения':'☁️ сохранено'}
@@ -101,20 +102,22 @@ function rmf(path){return sb.storage.from('media').remove([path])}
 async function init(){
   var stage='старт',tg=window.Telegram&&Telegram.WebApp;
   if(!tg||!tg.initData){msg('Откройте приложение через Telegram: найдите своего бота и нажмите кнопку меню.');return}
-  tg.ready();tg.expand();
+  tg.ready();tg.expand();msg('Загрузка…');
+  var wd=setTimeout(function(){msg('Долго нет ответа ['+stage+']. Закройте и откройте приложение заново.')},15000);
   try{
-    stage='подключение к Supabase';sb=supabase.createClient(SUPA_URL,SUPA_KEY);
     stage='вход через функцию tg-auth';
     var r=await fetch(SUPA_URL+'/functions/v1/tg-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY},body:JSON.stringify({initData:tg.initData})});
     var j=await r.json();if(!r.ok||!j.access_token)throw new Error(j.error||'ошибка входа');
-    stage='сохранение сессии';var se=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(se.error)throw se.error;
-    UID=se.data.user.id;ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
+    stage='подключение к данным';
+    var tok=j.access_token;UID=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub;
+    sb=supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{Authorization:'Bearer '+tok}}});
+    ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
     stage='загрузка данных (таблица items)';var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
     ALL=q.data;items=q.data.filter(function(x){return x.owner===UID}).map(function(x){return Object.assign({id:x.id},x.data)});
     $('#sync').textContent='☁️ сохранено';
     if(ME.owner)startAdmin();
-    render();
-  }catch(e){msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
+    clearTimeout(wd);render();
+  }catch(e){clearTimeout(wd);msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
 }
 
 /* ---------- forms ---------- */
