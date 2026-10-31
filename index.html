@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="theme-color" content="#d9531e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -57,8 +59,8 @@ label.c input{width:auto}
   <div class="top"><h1>🏍️ Гараж</h1><span class="mut" id="sync"></span></div>
   <div id="app"></div>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
-    <button class="g" onclick="installHelp()">📲 Установить как приложение</button>
-    <div style="margin-top:8px">Данные хранятся только на этом устройстве, в браузере. Не очищайте данные сайта, иначе записи пропадут.</div>
+    
+    <div style="margin-top:8px">Владелец приложения видит, кто заходит и какие квадроциклы добавлены.</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
@@ -73,39 +75,45 @@ function money(n){return n?Number(n).toLocaleString('ru-RU')+' ₽':'0 ₽'}
 function strip(o){var c=Object.assign({},o);delete c.id;return c}
 function by(t){return items.filter(function(i){return i.t===t})}
 
-/* ---------- storage ---------- */
-function lsGet(){try{return JSON.parse(localStorage.getItem('atv')||'[]')}catch(e){return[]}}
-function lsSet(){try{localStorage.setItem('atv',JSON.stringify(items))}catch(e){}}
+/* ---------- storage (Supabase) ---------- */
+var SUPA_URL='https://hbupbauthjdwhzxpzhwn.supabase.co/functions/v1/tg-auth';          // https://xxxx.supabase.co
+var SUPA_KEY='sb_publishable_MYhXjEqGmyyx7zXg51FVDQ_kCC3jE17';
+var sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
+function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t))}
+function mark(r){$('#sync').textContent=r&&r.error?'ошибка сохранения':'☁️ сохранено'}
 function put(id,data){
   data=strip(data);data.updated=Date.now();
-  if(col){col.doc(id).set(data).catch(function(){$('#sync').textContent='ошибка сохранения'})}
-  else{var o=Object.assign({id:id},data),i=items.findIndex(function(x){return x.id===id});if(i>=0)items[i]=o;else items.push(o);lsSet();render()}
+  var o=Object.assign({id:id},data),i=items.findIndex(function(x){return x.id===id});
+  if(i>=0)items[i]=o;else items.push(o);render();
+  sb.from('items').upsert({id:id,owner:UID,data:data}).then(mark);
 }
 function del(id){
-  if(col){col.doc(id).delete()}
-  else{items=items.filter(function(x){return x.id!==id});lsSet();render()}
+  items=items.filter(function(x){return x.id!==id});render();
+  sb.from('items').delete().eq('id',id).then(mark);
 }
+async function upl(blob){
+  var ext=(blob.type.split('/')[1]||'bin').replace('jpeg','jpg').replace('quicktime','mov');
+  var path=UID+'/'+uid()+'.'+ext;
+  var r=await sb.storage.from('media').upload(path,blob,{contentType:blob.type});
+  if(r.error)throw r.error;return {id:path};
+}
+function rmf(path){return sb.storage.from('media').remove([path])}
 async function init(){
+  var tg=window.Telegram&&Telegram.WebApp;
+  if(!tg||!tg.initData){msg('Откройте приложение через Telegram: найдите своего бота и нажмите кнопку меню.');return}
+  tg.ready();tg.expand();
   try{
-    if(window.claude){
-      var db=await claude.use('db'),user=await claude.use('user');
-      try{assets=await claude.use('assets')}catch(e){}
-      var id=user&&await user.id();
-      if(db&&id){
-        ME.uid=id;ME.db=db;ME.user=user;ME.owner=!!(user.isOwner&&user.isOwner());
-        col=db.collection('garage/'+id+'/d');
-        trackVisit(db,id);
-        if(ME.owner)startAdmin();
-        db.collection('data/users/'+id).get().then(function(o){S.mig=o.docs;render()}).catch(function(){});
-        col.onSnapshot(function(s){
-          items=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});
-          $('#sync').textContent='☁️ сохранено';render();
-        },function(){});
-        return;
-      }
-    }
-  }catch(e){}
-  items=lsGet();$('#sync').textContent='💾 только в этом браузере';render();
+    sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+    var r=await fetch(SUPA_URL+'/functions/v1/tg-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY},body:JSON.stringify({initData:tg.initData})});
+    var j=await r.json();if(!r.ok||!j.access_token)throw new Error(j.error||'ошибка входа');
+    var se=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(se.error)throw se.error;
+    UID=se.data.user.id;ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
+    var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
+    ALL=q.data;items=q.data.filter(function(x){return x.owner===UID}).map(function(x){return Object.assign({id:x.id},x.data)});
+    $('#sync').textContent='☁️ сохранено';
+    if(ME.owner)startAdmin();
+    render();
+  }catch(e){msg('Не удалось войти: '+(e.message||e))}
 }
 
 /* ---------- forms ---------- */
@@ -194,7 +202,7 @@ function render(){
   atvs.forEach(function(x){var o=el('option','',icon(x)+' '+x.name);o.value=x.id;if(x.id===a.id)o.selected=true;sel.appendChild(o)});
   sel.onchange=function(){S.atv=sel.value;render()};
   var tp=el('div','top');
-  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src='/_blob/'+a.photo;av.appendChild(aim)}else av.textContent=icon(a);
+  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src=BASE+a.photo;av.appendChild(aim)}else av.textContent=icon(a);
   av.title='Фото техники';av.onclick=function(){atvPhoto(a)};tp.appendChild(av);tp.appendChild(sel);
   var eb=el('button','g','✎');eb.onclick=function(){atvForm(a)};tp.appendChild(eb);
   var nb=el('button','g','+');nb.title='Новая техника';nb.onclick=function(){atvForm()};tp.appendChild(nb);
@@ -265,7 +273,7 @@ function render(){
 /* ---------- photos ---------- */
 function photoStrip(it,c){
   var w=el('div');w.style.marginTop='6px';
-  (it.photos||[]).forEach(function(id){var im=document.createElement('img');im.src='/_blob/'+id;im.className='thumb';im.onclick=function(){showPhoto(it,id)};w.appendChild(im)});
+  (it.photos||[]).forEach(function(id){var im=document.createElement('img');im.src=BASE+id;im.className='thumb';im.onclick=function(){showPhoto(it,id)};w.appendChild(im)});
   if(assets&&col){var b=el('button','g','📷 Фото');b.onclick=function(){addPhoto(it,b)};w.appendChild(b)}
   if(w.childNodes.length)c.appendChild(w);
 }
@@ -284,7 +292,7 @@ function addPhoto(it,btn){
 }
 function showPhoto(it,id){
   var b=$('#mb');b.textContent='';
-  var im=document.createElement('img');im.src='/_blob/'+id;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
+  var im=document.createElement('img');im.src=BASE+id;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
   var r=el('div','acts'),cl=el('button','','Закрыть'),dl=el('button','g','Удалить фото');
   cl.onclick=function(){$('#m').classList.remove('on')};
   dl.onclick=function(){if(!confirm('Удалить фото?'))return;$('#m').classList.remove('on');put(it.id,Object.assign({},it,{photos:(it.photos||[]).filter(function(x){return x!==id})}));if(assets)assets.delete(id).catch(function(){})};
@@ -344,7 +352,7 @@ function filterBar(app){
 
 /* ---------- фото квадроцикла ---------- */
 function pickAtvPhoto(a){
-  if(!(assets&&col)){alert('В этой версии фото недоступны');return}
+  if(!(assets&&col)){alert('Загрузка фото доступна только при сохранении в аккаунте');return}
   var f=document.createElement('input');f.type='file';f.accept='image/*';
   f.onchange=async function(){
     var file=f.files[0];if(!file)return;$('#sync').textContent='загрузка фото…';
@@ -356,7 +364,7 @@ function pickAtvPhoto(a){
 function atvPhoto(a){
   if(!a.photo){pickAtvPhoto(a);return}
   var b=$('#mb');b.textContent='';
-  var im=document.createElement('img');im.src='/_blob/'+a.photo;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
+  var im=document.createElement('img');im.src=BASE+a.photo;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
   var r=el('div','acts'),cl=el('button','','Закрыть'),rp=el('button','g','Заменить фото');
   cl.onclick=function(){$('#m').classList.remove('on')};
   rp.onclick=function(){$('#m').classList.remove('on');pickAtvPhoto(a)};
@@ -366,17 +374,17 @@ function atvPhoto(a){
 /* ---------- галерея ---------- */
 function mediaMeta(a,x){return [fdate(x.date),(by('atv').find(function(q){return q.id===x.atv})||{}).name].filter(Boolean).join(' · ')}
 function addMedia(a){
-  if(!(assets&&col)){alert('В этой версии фото и видео недоступны');return}
+  if(!(assets&&col)){alert('Загрузка доступна только при сохранении в аккаунте');return}
   var f=document.createElement('input');f.type='file';f.accept='video/*,image/*';
   f.onchange=function(){
     var file=f.files[0];if(!file)return;
     var vid=file.type.indexOf('video')===0;
-    if(file.size>20*1024*1024&&vid){alert('Видео '+Math.round(file.size/1048576)+' МБ — лимит 20 МБ на файл. Обрежьте или сожмите ролик.');return}
+    if(file.size>50*1024*1024&&vid){alert('Видео '+Math.round(file.size/1048576)+' МБ — лимит 50 МБ на файл. Обрежьте или сожмите ролик.');return}
     openForm('Новое в галерее',[['title','Название','text','','Покатушки в лесу'],['date','Дата','date',today()],['notes','Заметки','area']],null,function(d){
       $('#sync').textContent='загрузка…';
       (vid?Promise.resolve(file):shrink(file)).then(function(b){return assets.upload(b)}).then(function(r){
         d.t='media';d.atv=a.id;d.kind=vid?'video':'image';d.file=r.id;put(uid(),d);
-      }).catch(function(){alert('Не удалось загрузить файл (возможно, он больше 20 МБ)');$('#sync').textContent=''});
+      }).catch(function(){alert('Не удалось загрузить файл (возможно, он больше 50 МБ)');$('#sync').textContent=''});
     });
   };
   f.click();
@@ -384,12 +392,12 @@ function addMedia(a){
 function renderGal(app,a){
   var ab=el('button','add','+ Добавить видео или фото');ab.onclick=function(){addMedia(a)};app.appendChild(ab);
   var l=flt(by('media'));
-  if(!l.length){app.appendChild(el('div','empty','Здесь будут видео и фото покатушек. Лимит — 20 МБ на файл.'));return}
+  if(!l.length){app.appendChild(el('div','empty','Здесь будут видео и фото покатушек. Лимит — 50 МБ на файл.'));return}
   var g=el('div','gal');
   l.forEach(function(x){
     var c=el('div','card gi'),m;
-    if(x.kind==='video'){m=document.createElement('video');m.src='/_blob/'+x.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
-    else{m=document.createElement('img');m.src='/_blob/'+x.file;m.onclick=function(){var b=$('#mb');b.textContent='';var im=document.createElement('img');im.src=m.src;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);var cl=el('button','','Закрыть');cl.style.marginTop='10px';cl.onclick=function(){$('#m').classList.remove('on')};b.appendChild(cl);$('#m').classList.add('on')}}
+    if(x.kind==='video'){m=document.createElement('video');m.src=BASE+x.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
+    else{m=document.createElement('img');m.src=BASE+x.file;m.onclick=function(){var b=$('#mb');b.textContent='';var im=document.createElement('img');im.src=m.src;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);var cl=el('button','','Закрыть');cl.style.marginTop='10px';cl.onclick=function(){$('#m').classList.remove('on')};b.appendChild(cl);$('#m').classList.add('on')}}
     c.appendChild(m);
     var t=el('div','',x.title);t.style.cssText='font-weight:600;margin-top:6px';c.appendChild(t);
     c.appendChild(el('div','mut',mediaMeta(a,x)));
@@ -403,24 +411,14 @@ function renderGal(app,a){
 }
 
 /* ---------- участники, установка, перенос ---------- */
-function trackVisit(db,id){
-  var pr=db.collection('garage').doc(id);
-  pr.get().then(function(sn){var d=(sn.exists&&sn.data())||{};
-    return pr.set({visits:(d.visits||0)+1,first:d.first||Date.now(),lastSeen:Date.now()})}).catch(function(){});
-}
 function startAdmin(){
-  ME.db.collection('garage').onSnapshot(function(s){
-    s.docs.forEach(function(d){
-      var u=d.id,o=ADM[u]||(ADM[u]={items:[]});o.prof=d.data();
-      if(!o.sub){o.sub=1;ME.db.collection('garage/'+u+'/d').onSnapshot(function(q){
-        o.items=q.docs.map(function(x){return x.data()});if(S.tab==='adm')render()},function(){})}
-    });
-    ME.user.profiles(Object.keys(ADM)).then(function(ps){
-      for(var k in ps){if(ADM[k])ADM[k].name=ps[k]&&ps[k].name||''}
-      if(S.tab==='adm')render();
-    }).catch(function(){});
+  sb.from('profiles').select('*').then(function(r){
+    if(r.error)return;
+    r.data.forEach(function(p){ADM[p.id]={name:p.name||(p.username?'@'+p.username:''),
+      prof:{visits:p.visits,lastSeen:p.last_seen?new Date(p.last_seen).getTime():0},
+      items:ALL.filter(function(x){return x.owner===p.id}).map(function(x){return x.data})}});
     if(S.tab==='adm')render();
-  },function(){});
+  });
 }
 function renderAdmin(app){
   app.appendChild(el('div','mut','Участники, которые заходили в приложение и сохраняли данные.')).style.marginBottom='8px';
@@ -444,7 +442,7 @@ function installHelp(){
   var b=$('#mb');b.textContent='';b.appendChild(el('h1','','Как установить'));
   [['iPhone (Safari)','Нажмите «Поделиться» → «На экран “Домой”».'],['Android (Chrome)','Меню ⋮ → «Установить приложение» или «Добавить на главный экран».'],['Компьютер','В Chrome нажмите значок установки в адресной строке или закрепите вкладку.']].forEach(function(t){
     var c=el('div','card');c.appendChild(el('b','',t[0]));c.appendChild(el('div','mut',t[1]));b.appendChild(c)});
-  b.appendChild(el('div','mut','Иконка откроет приложение в один тап, как обычное. Работает без аккаунта.'));
+  b.appendChild(el('div','mut','Иконка откроет приложение в один тап, как обычное. Для входа нужен аккаунт Claude: так хранятся ваши данные.'));
   var cl=el('button','','Закрыть');cl.style.marginTop='10px';cl.onclick=function(){$('#m').classList.remove('on')};b.appendChild(cl);$('#m').classList.add('on');
 }
 function migBanner(app){
