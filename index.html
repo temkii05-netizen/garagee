@@ -79,7 +79,7 @@ function by(t){return items.filter(function(i){return i.t===t})}
 /* ---------- storage (Supabase) ---------- */
 var SUPA_URL=(window.CFG||{}).url||'',SUPA_KEY=(window.CFG||{}).key||'';   // значения лежат в config.js
 SUPA_URL=SUPA_URL.replace(/\/(functions|rest|auth|storage)\/.*$/,'').replace(/\/+$/,'');
-var sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
+var R2U={used:0,quota:0},TOK='',USAGE={used:0,quota:0,premium:false},sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
 function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t))}
 function mark(r){$('#sync').textContent=r&&r.error?'ошибка сохранения':'☁️ сохранено'}
 function put(id,data){
@@ -92,13 +92,18 @@ function del(id){
   items=items.filter(function(x){return x.id!==id});render();
   sb.from('items').delete().eq('id',id).then(mark);
 }
+function mb(n){return (n/1048576).toFixed(n<10485760?1:0)}
+function VIDMAX(){return (USAGE.premium?50:20)*1024*1024}
+function errMsg(e,d){var m=(e&&e.message)||'';return m.indexOf('Не хватает')===0?m:m.indexOf('row-level security')>=0?'Не хватает места в вашей квоте. Удалите лишнее или оформите подписку.':d}
+function getUsage(){return sb.rpc('my_usage').then(function(r){if(!r.error&&r.data)USAGE=r.data})}
 async function upl(blob){
+  if(USAGE.quota&&USAGE.used+blob.size>USAGE.quota)throw new Error('Не хватает места: свободно '+mb(Math.max(0,USAGE.quota-USAGE.used))+' МБ из '+mb(USAGE.quota));
   var ext=(blob.type.split('/')[1]||'bin').replace('jpeg','jpg').replace('quicktime','mov');
   var path=UID+'/'+uid()+'.'+ext;
   var r=await sb.storage.from('media').upload(path,blob,{contentType:blob.type});
-  if(r.error)throw r.error;return {id:path};
+  if(r.error)throw r.error;USAGE.used+=blob.size;return {id:path};
 }
-function rmf(path){return sb.storage.from('media').remove([path])}
+function rmf(path){return sb.storage.from('media').remove([path]).then(function(r){getUsage().then(render);return r})}
 async function init(){
   var stage='старт',tg=window.Telegram&&Telegram.WebApp;
   if(!tg||!tg.initData){msg('Откройте приложение через Telegram: найдите своего бота и нажмите кнопку меню.');return}
@@ -111,12 +116,14 @@ async function init(){
     var r=await fetch(SUPA_URL+'/functions/v1/tg-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY},body:JSON.stringify({initData:tg.initData})});
     var j=await r.json();if(!r.ok||!j.access_token)throw new Error(j.error||'ошибка входа');
     stage='подключение к данным';
-    var tok=j.access_token;UID=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub;
+    var tok=j.access_token;TOK=tok;UID=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub;
     sb=supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{Authorization:'Bearer '+tok}}});
     ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
     stage='загрузка данных (таблица items)';var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
     ALL=q.data;items=q.data.filter(function(x){return x.owner===UID}).map(function(x){return Object.assign({id:x.id},x.data)});
     $('#sync').textContent='☁️ сохранено';
+    try{await getUsage()}catch(e){}
+    r2usage();
     if(ME.owner)startAdmin();
     clearTimeout(wd);render();
   }catch(e){clearTimeout(wd);msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
@@ -154,7 +161,7 @@ function openForm(title,fields,init,save){
   $('#m').classList.add('on');
 }
 function i0(i){i.style.borderColor='var(--bad)';i.focus()}
-$('#m').onclick=function(e){if(e.target.id==='m')$('#m').classList.remove('on')};
+$('#m').onclick=function(e){if(e.target.id==='m'){$('#m').classList.remove('on');$('#mb').textContent=''}};
 
 function curAtv(){var a=by('atv');if(!a.length)return null;return a.find(function(x){return x.id===S.atv})||a[0]}
 
@@ -196,6 +203,15 @@ function partForm(p){
 }
 
 /* ---------- render ---------- */
+function usageBar(app){
+  if(!USAGE.quota)return;
+  var p=Math.min(100,Math.round(USAGE.used/USAGE.quota*100)),w=el('div','card');w.style.padding='10px';
+  var t=el('div','row');t.appendChild(el('span','mut','Файлы: '+mb(USAGE.used)+' из '+mb(USAGE.quota)+' МБ'));
+  t.appendChild(el('span','mut',USAGE.premium?'⭐ подписка':'бесплатный'));w.appendChild(t);
+  var bar=el('div');bar.style.cssText='height:6px;border-radius:3px;background:var(--bd);margin-top:6px;overflow:hidden';
+  var f=el('div');f.style.cssText='height:100%;width:'+p+'%;background:'+(p>90?'var(--bad)':p>70?'var(--warn)':'var(--ok)');
+  bar.appendChild(f);w.appendChild(bar);app.appendChild(w);
+}
 function render(){
   var app=$('#app');app.textContent='';migBanner(app);
   var atvs=by('atv'),a=curAtv();
@@ -231,6 +247,7 @@ function render(){
   var ty=recs.filter(function(r){return (r.date||'').indexOf(year)===0}).reduce(function(s,r){return s+(Number(r.cost)||0)},0);
   sbox(money(tot),'всего ('+money(ty)+' в '+year+')');
   app.appendChild(st);
+  usageBar(app);
 
   var tabs=el('div','tabs');
   [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]);b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
@@ -292,7 +309,7 @@ function addPhoto(it,btn){
   f.onchange=async function(){
     var file=f.files[0];if(!file)return;btn.textContent='Загрузка…';
     try{var blob=await shrink(file);var r=await assets.upload(blob);put(it.id,Object.assign({},it,{photos:(it.photos||[]).concat(r.id)}))}
-    catch(e){btn.textContent='📷 Фото';alert('Не удалось загрузить фото')}
+    catch(e){btn.textContent='📷 Фото';alert(errMsg(e,'Не удалось загрузить фото'))}
   };
   f.click();
 }
@@ -363,7 +380,7 @@ function pickAtvPhoto(a){
   f.onchange=async function(){
     var file=f.files[0];if(!file)return;$('#sync').textContent='загрузка фото…';
     try{var r=await assets.upload(await shrink(file));var old=a.photo;put(a.id,Object.assign({},a,{photo:r.id}));if(old)assets.delete(old).catch(function(){})}
-    catch(e){alert('Не удалось загрузить фото');$('#sync').textContent=''}
+    catch(e){alert(errMsg(e,'Не удалось загрузить фото'));$('#sync').textContent=''}
   };
   f.click();
 }
@@ -379,38 +396,121 @@ function atvPhoto(a){
 
 /* ---------- галерея ---------- */
 function mediaMeta(a,x){return [fdate(x.date),(by('atv').find(function(q){return q.id===x.atv})||{}).name].filter(Boolean).join(' · ')}
+function gb(n){return n>=1073741824?(n/1073741824).toFixed(2)+' ГБ':mb(n)+' МБ'}
+var FN=SUPA_URL+'/functions/v1/tg-media',TG_VIDEO_MAX=50000000,TG_BIG=20000000;
+function quotaErr(j){return 'Не хватает места: свободно '+gb(Math.max(0,j.quota-j.used))+' из '+gb(j.quota)}
+async function mcall(action,body){
+  var r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+TOK},body:JSON.stringify(Object.assign({action:action},body||{}))});
+  var j={};try{j=await r.json()}catch(e){}
+  if(r.status===401)throw new Error('Сессия истекла: закройте и откройте приложение заново');
+  if(!r.ok)throw new Error(j.error==='quota'?quotaErr(j):(j.error||'ошибка '+r.status));
+  return j;
+}
+function r2usage(){return mcall('usage').then(function(j){R2U=j}).catch(function(){})}
+function sendFile(file,kind,onp){return new Promise(function(res,rej){
+  var fd=new FormData();fd.append('file',file,file.name||(kind==='video'?'video.mp4':'photo.jpg'));fd.append('kind',kind);
+  var x=new XMLHttpRequest();x.open('POST',FN);x.setRequestHeader('Authorization','Bearer '+TOK);x.setRequestHeader('apikey',SUPA_KEY);
+  x.upload.onprogress=function(e){if(e.lengthComputable)onp(Math.round(e.loaded/e.total*100))};
+  x.onload=function(){var j={};try{j=JSON.parse(x.responseText)}catch(e){}
+    if(x.status<300)res(j);else rej(new Error(j.error==='quota'?quotaErr(j):(j.error||'Ошибка загрузки ('+x.status+')')))};
+  x.onerror=function(){rej(new Error('Не удалось отправить файл: проверьте интернет'))};
+  x.send(fd)})}
+function drawThumb(src,w,h){
+  var k=Math.min(1,480/Math.max(w,h)),cv=document.createElement('canvas');cv.width=Math.round(w*k);cv.height=Math.round(h*k);
+  cv.getContext('2d').drawImage(src,0,0,cv.width,cv.height);
+  return new Promise(function(res){cv.toBlob(function(b){res(b)},'image/jpeg',0.75)});
+}
+function thumbOf(file,vid){
+  if(!vid)return createImageBitmap(file).then(function(bm){return drawThumb(bm,bm.width,bm.height)}).catch(function(){return null});
+  return new Promise(function(res){
+    var v=document.createElement('video'),u=URL.createObjectURL(file),done=false;
+    function fin(b){if(done)return;done=true;URL.revokeObjectURL(u);res(b)}
+    v.muted=true;v.playsInline=true;v.preload='auto';v.src=u;
+    v.onloadeddata=function(){try{v.currentTime=Math.min(1,(v.duration||2)/4)}catch(e){fin(null)}};
+    v.onseeked=function(){drawThumb(v,v.videoWidth,v.videoHeight).then(fin).catch(function(){fin(null)})};
+    v.onerror=function(){fin(null)};setTimeout(function(){fin(null)},10000);
+  });
+}
 function addMedia(a){
-  if(!(assets&&col)){alert('Загрузка доступна только при сохранении в аккаунте');return}
+  if(!col){alert('Загрузка доступна только после входа через Telegram');return}
   var f=document.createElement('input');f.type='file';f.accept='video/*,image/*';
   f.onchange=function(){
-    var file=f.files[0];if(!file)return;
-    var vid=file.type.indexOf('video')===0;
-    if(file.size>50*1024*1024&&vid){alert('Видео '+Math.round(file.size/1048576)+' МБ — лимит 50 МБ на файл. Обрежьте или сожмите ролик.');return}
-    openForm('Новое в галерее',[['title','Название','text','','Покатушки в лесу'],['date','Дата','date',today()],['notes','Заметки','area']],null,function(d){
-      $('#sync').textContent='загрузка…';
-      (vid?Promise.resolve(file):shrink(file)).then(function(b){return assets.upload(b)}).then(function(r){
-        d.t='media';d.atv=a.id;d.kind=vid?'video':'image';d.file=r.id;put(uid(),d);
-      }).catch(function(){alert('Не удалось загрузить файл (возможно, он больше 50 МБ)');$('#sync').textContent=''});
-    });
+    var file=f.files[0];if(!file)return;var vid=file.type.indexOf('video')===0;
+    if(vid&&file.size>TG_VIDEO_MAX){alert('Видео '+Math.round(file.size/1048576)+' МБ: через Telegram можно загружать ролики до 50 МБ. Сожмите или обрежьте видео.');return}
+    openForm('Новое в галерее',[['title','Название','text','','Покатушки в лесу'],['date','Дата','date',today()],['notes','Заметки','area']],null,function(d){doUpload(a,file,vid,d)});
   };
   f.click();
 }
+async function doUpload(a,file,vid,d){
+  var st=$('#sync');
+  try{
+    st.textContent='подготовка…';
+    var body=vid?file:await shrink(file),th=await thumbOf(file,vid);
+    var c=await sendFile(body,vid?'video':'image',function(n){st.textContent='загрузка '+n+'%'}),tp=null;
+    if(th){try{tp=(await upl(th)).id}catch(e){}}
+    d.t='media';d.atv=a.id;d.kind=vid?'video':'image';d.file=c.key;d.thumb=tp;d.size=c.size;d.store='tg';
+    put(uid(),d);r2usage().then(render);
+  }catch(e){alert(e.message||'Не удалось загрузить файл');st.textContent='☁️ сохранено'}
+}
+async function playMedia(x){
+  var b=$('#mb');b.textContent='';b.appendChild(el('div','mut','Загрузка…'));$('#m').classList.add('on');
+  function close(){var v=b.querySelector('video');if(v)v.pause();$('#m').classList.remove('on');b.textContent=''}
+  function acts(extra){
+    var r=el('div','acts'),cl=el('button','','Закрыть');cl.onclick=close;r.appendChild(cl);
+    var sd=el('button','g','Отправить в чат с ботом');
+    sd.onclick=function(){sd.textContent='Отправляю…';mcall('send',{key:x.file}).then(function(){
+      sd.textContent='Отправлено в чат';var tg=window.Telegram&&Telegram.WebApp;
+      if(tg&&tg.close){var q=el('button','g','Закрыть приложение и открыть чат');q.onclick=function(){tg.close()};r.appendChild(q)}
+    }).catch(function(e){sd.textContent='Отправить в чат с ботом';alert(e.message)})};
+    r.appendChild(sd);b.appendChild(r);
+  }
+  try{
+    if(x.size>TG_BIG){
+      b.textContent='';b.appendChild(el('div','mut','Этот файл больше 20 МБ: внутри приложения его показать нельзя. Нажмите «Отправить в чат с ботом» и посмотрите его в Telegram.'));acts();return;
+    }
+    var r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+TOK},body:JSON.stringify({action:'get',key:x.file})});
+    if(r.status===401)throw new Error('Сессия истекла: закройте и откройте приложение заново');
+    if((r.headers.get('content-type')||'').indexOf('application/json')>=0){var j=await r.json();throw new Error(j.big?'Файл слишком большой для показа здесь':(j.error||'ошибка'))}
+    var url=URL.createObjectURL(new Blob([await r.arrayBuffer()],{type:x.kind==='video'?'video/mp4':'image/jpeg'}));
+    b.textContent='';var m;
+    if(x.kind==='video'){m=document.createElement('video');m.controls=true;m.autoplay=true;m.playsInline=true}else m=document.createElement('img');
+    m.src=url;m.style.cssText='width:100%;border-radius:12px;background:#000;max-height:70vh;object-fit:contain';b.appendChild(m);acts();
+  }catch(e){b.textContent='';b.appendChild(el('div','mut',e.message));acts()}
+}
 function renderGal(app,a){
   var ab=el('button','add','+ Добавить видео или фото');ab.onclick=function(){addMedia(a)};app.appendChild(ab);
+  if(R2U.quota){
+    var p=Math.min(100,Math.round(R2U.used/R2U.quota*100)),w=el('div','card');w.style.padding='10px';
+    w.appendChild(el('div','mut','Галерея: '+gb(R2U.used)+' из '+gb(R2U.quota)));
+    var bar=el('div');bar.style.cssText='height:6px;border-radius:3px;background:var(--bd);margin-top:6px;overflow:hidden';
+    var f=el('div');f.style.cssText='height:100%;width:'+p+'%;background:'+(p>90?'var(--bad)':p>70?'var(--warn)':'var(--ok)');
+    bar.appendChild(f);w.appendChild(bar);app.appendChild(w);
+  }
   var l=flt(by('media'));
-  if(!l.length){app.appendChild(el('div','empty','Здесь будут видео и фото покатушек. Лимит — 50 МБ на файл.'));return}
+  if(!l.length){app.appendChild(el('div','empty','Здесь будут видео и фото покатушек.'));return}
   var g=el('div','gal');
   l.forEach(function(x){
     var c=el('div','card gi'),m;
-    if(x.kind==='video'){m=document.createElement('video');m.src=BASE+x.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
-    else{m=document.createElement('img');m.src=BASE+x.file;m.onclick=function(){var b=$('#mb');b.textContent='';var im=document.createElement('img');im.src=m.src;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);var cl=el('button','','Закрыть');cl.style.marginTop='10px';cl.onclick=function(){$('#m').classList.remove('on')};b.appendChild(cl);$('#m').classList.add('on')}}
+    if(x.store==='tg'){
+      m=el('div');m.style.cssText='position:relative;cursor:pointer';
+      if(x.thumb){var im=document.createElement('img');im.src=BASE+x.thumb;m.appendChild(im)}
+      else{var ph=el('div','',x.kind==='video'?'🎬':'🖼');ph.style.cssText='height:160px;background:#000;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:40px';m.appendChild(ph)}
+      if(x.kind==='video'){var pl=el('div','','▶');pl.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px';m.appendChild(pl)}
+      m.onclick=function(){playMedia(x)};
+    }else if(x.kind==='video'){m=document.createElement('video');m.src=BASE+x.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
+    else{m=document.createElement('img');m.src=BASE+x.file;m.onclick=function(){bigImg(m.src)}}
     c.appendChild(m);
     var t=el('div','',x.title);t.style.cssText='font-weight:600;margin-top:6px';c.appendChild(t);
-    c.appendChild(el('div','mut',mediaMeta(a,x)));
+    c.appendChild(el('div','mut',mediaMeta(a,x)+(x.size?' · '+gb(x.size):'')));
     if(x.notes)c.appendChild(el('div','mut',x.notes));
     var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
     e1.onclick=function(){openForm('Изменить',[['title','Название','text'],['date','Дата','date'],['notes','Заметки','area']],x,function(d){put(x.id,Object.assign({},x,d))})};
-    d1.onclick=function(){if(confirm('Удалить из галереи?')){del(x.id);if(assets)assets.delete(x.file).catch(function(){})}};
+    d1.onclick=function(){
+      if(!confirm('Удалить из галереи?'))return;
+      if(x.store==='tg'){
+        mcall('del',{key:x.file}).then(function(){del(x.id);if(x.thumb)rmf(x.thumb);return r2usage()}).then(render).catch(function(e){alert(e.message)});
+      }else{del(x.id);if(assets)assets.delete(x.file).catch(function(){})}
+    };
     ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);g.appendChild(c);
   });
   app.appendChild(g);
@@ -418,12 +518,12 @@ function renderGal(app,a){
 
 /* ---------- участники, установка, перенос ---------- */
 function startAdmin(){
-  Promise.all([sb.from('profiles').select('*'),sb.from('items').select('id,owner,data')]).then(function(rs){
+  Promise.all([sb.from('profiles').select('*'),sb.from('items').select('id,owner,data'),sb.rpc('all_usage'),sb.from('files').select('owner,size')]).then(function(rs){
     if(rs[0].error||rs[1].error)return;
-    ALL=rs[1].data;ADM={};
+    ALL=rs[1].data;ADM={};var us={},r2={};((rs[3]&&rs[3].data)||[]).forEach(function(x){r2[x.owner]=(r2[x.owner]||0)+Number(x.size)});((rs[2]&&rs[2].data)||[]).forEach(function(x){us[x.user_id]=Number(x.used)});
     rs[0].data.forEach(function(p){ADM[p.id]={name:p.name||'Без имени',user:p.username?'@'+p.username:'',
       prof:{visits:p.visits,lastSeen:p.last_seen?new Date(p.last_seen).getTime():0},
-      rows:ALL.filter(function(x){return x.owner===p.id})}});
+      used:us[p.id]||0,r2:r2[p.id]||0,plan:p.plan_until,rows:ALL.filter(function(x){return x.owner===p.id})}});
     if(S.tab==='adm')render();
   });
 }
@@ -458,7 +558,8 @@ function adminItem(k,i,av){
   }else{
     rw.appendChild(el('b','',i.title));rw.appendChild(el('span','mut',fdate(i.date)));d.appendChild(rw);
     var m;
-    if(i.kind==='video'){m=document.createElement('video');m.src=BASE+i.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
+    if(i.store==='tg'){m=document.createElement('img');m.alt='▶ Открыть';m.src=i.thumb?BASE+i.thumb:'';m.onclick=function(){playMedia(i)}}
+    else if(i.kind==='video'){m=document.createElement('video');m.src=BASE+i.file+'#t=0.1';m.controls=true;m.preload='metadata';m.playsInline=true}
     else{m=document.createElement('img');m.src=BASE+i.file;m.onclick=function(){bigImg(m.src)}}
     m.style.cssText='display:block;width:100%;max-height:50vh;object-fit:contain;border-radius:10px;background:#000;margin-top:6px';
     d.appendChild(m);meta([an,i.notes]);
@@ -480,6 +581,7 @@ function renderAdmin(app){
     var nb=el('b','',o.name+(u===UID?' (вы)':''));rw.appendChild(nb);
     rw.appendChild(el('span','mut',(o.user?o.user+' · ':'')+'заходов: '+(o.prof.visits||0)));c.appendChild(rw);
     c.appendChild(el('div','mut','Последний вход: '+fdt(o.prof.lastSeen)));
+    c.appendChild(el('div','mut','Чеки и фото: '+mb(o.used||0)+' МБ · галерея: '+gb(o.r2||0)+' · '+(o.plan&&new Date(o.plan)>new Date()?'подписка до '+new Date(o.plan).toLocaleDateString('ru-RU'):'бесплатный')));
     var rows=o.rows.map(function(x){return x.data}),n=function(t){return rows.filter(function(i){return i.t===t})};
     var av=n('atv');
     av.forEach(function(a){c.appendChild(el('span','chip',icon(a)+' '+a.name+(a.odo?' · '+a.odo+' '+a.unit:'')))});
