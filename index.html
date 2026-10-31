@@ -89,6 +89,8 @@ function put(id,data){
   sb.from('items').upsert({id:id,owner:UID,data:data}).then(mark);
 }
 function del(id){
+  var gone=items.find(function(x){return x.id===id});
+  if(gone&&gone.photos&&assets)gone.photos.forEach(function(f){rmf(f).catch(function(){})});
   items=items.filter(function(x){return x.id!==id});render();
   sb.from('items').delete().eq('id',id).then(mark);
 }
@@ -329,7 +331,7 @@ function buyForm(a,b){
     ['qty','Количество','number',1],
     ['price','Цена за штуку, ₽','number'],
     ['notes','Заметки (артикул, магазин)','area']
-  ],b,function(d){d.t='buy';d.atv=a.id;d.added=(b&&b.added)||today();d.done=b?!!b.done:false;put(b?b.id:uid(),d)});
+  ],b,function(d){d.t='buy';d.atv=a.id;d.photos=(b&&b.photos)||[];d.added=(b&&b.added)||today();d.done=b?!!b.done:false;put(b?b.id:uid(),d)});
 }
 function renderBuy(app,a){
   var ab=el('button','add','+ Добавить в список');ab.onclick=function(){buyForm(a)};app.appendChild(ab);
@@ -345,6 +347,7 @@ function renderBuy(app,a){
     rw.appendChild(lb);if(x.price)rw.appendChild(el('span','mut',money(x.price*(x.qty||1))));
     c.appendChild(rw);
     if(x.notes)c.appendChild(el('div','mut',x.notes)).style.marginTop='4px';
+    photoStrip(x,c);
     var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
     e1.onclick=function(){buyForm(a,x)};d1.onclick=function(){del(x.id)};
     ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
@@ -400,7 +403,8 @@ function gb(n){return n>=1073741824?(n/1073741824).toFixed(2)+' ГБ':mb(n)+' М
 var FN=SUPA_URL+'/functions/v1/tg-media',TG_VIDEO_MAX=50000000,TG_BIG=20000000;
 function quotaErr(j){return 'Не хватает места: свободно '+gb(Math.max(0,j.quota-j.used))+' из '+gb(j.quota)}
 async function mcall(action,body){
-  var r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+TOK},body:JSON.stringify(Object.assign({action:action},body||{}))});
+  var r;try{r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+TOK},body:JSON.stringify(Object.assign({action:action},body||{}))})}
+  catch(e){throw new Error('Функция tg-media недоступна (не развёрнута, неверное имя или включён Verify JWT)')}
   var j={};try{j=await r.json()}catch(e){}
   if(r.status===401)throw new Error('Сессия истекла: закройте и откройте приложение заново');
   if(!r.ok)throw new Error(j.error==='quota'?quotaErr(j):(j.error||'ошибка '+r.status));
@@ -413,7 +417,7 @@ function sendFile(file,kind,onp){return new Promise(function(res,rej){
   x.upload.onprogress=function(e){if(e.lengthComputable)onp(Math.round(e.loaded/e.total*100))};
   x.onload=function(){var j={};try{j=JSON.parse(x.responseText)}catch(e){}
     if(x.status<300)res(j);else rej(new Error(j.error==='quota'?quotaErr(j):(j.error||'Ошибка загрузки ('+x.status+')')))};
-  x.onerror=function(){rej(new Error('Не удалось отправить файл: проверьте интернет'))};
+  x.onerror=function(){rej(new Error('Запрос оборвался (файл '+Math.round(file.size/1048576*10)/10+' МБ). Возможно, функция не принимает такой размер. Попробуйте файл поменьше.'))};
   x.send(fd)})}
 function drawThumb(src,w,h){
   var k=Math.min(1,480/Math.max(w,h)),cv=document.createElement('canvas');cv.width=Math.round(w*k);cv.height=Math.round(h*k);
@@ -444,6 +448,8 @@ function addMedia(a){
 async function doUpload(a,file,vid,d){
   var st=$('#sync');
   try{
+    st.textContent='проверка соединения…';
+    await mcall('usage');
     st.textContent='подготовка…';
     var body=vid?file:await shrink(file),th=await thumbOf(file,vid);
     var c=await sendFile(body,vid?'video':'image',function(n){st.textContent='загрузка '+n+'%'}),tp=null;
@@ -555,6 +561,7 @@ function adminItem(k,i,av){
     rw.appendChild(el('b','',(i.done?'✓ ':'')+i.name+(i.qty>1?' × '+i.qty:'')));
     if(i.price)rw.appendChild(el('span','mut',money((Number(i.price)||0)*(Number(i.qty)||1))));d.appendChild(rw);
     meta([an,i.notes]);
+    adminPhotos(d,i.photos);
   }else{
     rw.appendChild(el('b','',i.title));rw.appendChild(el('span','mut',fdate(i.date)));d.appendChild(rw);
     var m;
