@@ -53,6 +53,7 @@ label.c input{width:auto}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 .gi{padding:8px;margin:0}.gi video,.gi img{display:block;width:100%;max-height:60vh;object-fit:contain;border-radius:10px;background:#000}
 .done{text-decoration:line-through;color:var(--mut)}
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}.tabs button{flex:1 0 auto;white-space:nowrap;padding:10px 12px}
 </style>
 </head>
 <body>
@@ -89,19 +90,23 @@ function mark(r){
 function reloadItems(){
   if(!sb)return;
   sb.from('items').select('id,owner,data').eq('owner',UID).then(function(q){
-    if(!q.error){items=q.data.map(function(x){return Object.assign({id:x.id},x.data)});render()}});
+    if(q.error)return;var list=q.data.map(function(x){return Object.assign({id:x.id},x.data)});
+    sb.from('documents').select('id,owner,data').eq('owner',UID).then(function(d){
+      if(!d.error)list=list.concat(d.data.map(function(x){return Object.assign({id:x.id},x.data)}));
+      items=list;render()},function(){items=list;render()});
+  });
 }
 function put(id,data){
   data=strip(data);data.updated=Date.now();
   var o=Object.assign({id:id},data),i=items.findIndex(function(x){return x.id===id});
   if(i>=0)items[i]=o;else items.push(o);render();
-  sb.from('items').upsert({id:id,owner:UID,data:data}).then(mark);
+  sb.from(data.t==='doc'?'documents':'items').upsert({id:id,owner:UID,data:data}).then(mark);
 }
 function del(id){
   var gone=items.find(function(x){return x.id===id});
-  if(gone&&gone.photos&&assets)gone.photos.forEach(function(f){rmf(f).catch(function(){})});
+  if(gone&&gone.photos&&assets)gone.photos.forEach(function(f){(gone.t==='doc'?sb.storage.from('docs').remove([f]):rmf(f)).catch(function(){})});
   items=items.filter(function(x){return x.id!==id});render();
-  sb.from('items').delete().eq('id',id).then(mark);
+  sb.from(gone&&gone.t==='doc'?'documents':'items').delete().eq('id',id).then(mark);
 }
 function mb(n){return (n/1048576).toFixed(n<10485760?1:0)}
 function VIDMAX(){return (USAGE.premium?50:20)*1024*1024}
@@ -132,6 +137,7 @@ async function init(){
     ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
     stage='загрузка данных (таблица items)';var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
     ALL=q.data;items=q.data.filter(function(x){return x.owner===UID}).map(function(x){return Object.assign({id:x.id},x.data)});
+    try{var dq=await sb.from('documents').select('id,owner,data').eq('owner',UID);if(!dq.error)items=items.concat(dq.data.map(function(x){return Object.assign({id:x.id},x.data)}))}catch(e){}
     $('#sync').textContent='☁️ сохранено';
     try{await getUsage()}catch(e){}
     r2usage();
@@ -261,11 +267,12 @@ function render(){
   sbox(money(tot),'всего ('+money(ty)+' в '+year+')');
   app.appendChild(st);
   usageBar(app);
+  docsAlert(app,a);
 
   var tabs=el('div','tabs');
-  [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]);b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
+  [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея'],['docs','Документы']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]+(t[0]==='docs'&&docsWarn(a)?' ⚠️':''));b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
   app.appendChild(tabs);
-  if(S.tab!=='adm')filterBar(app);
+  if(S.tab!=='adm'&&S.tab!=='docs')filterBar(app);
 
   if(S.tab==='log'){
     var ab=el('button','add','+ Запись об обслуживании');ab.onclick=function(){recForm()};app.appendChild(ab);
@@ -285,7 +292,7 @@ function render(){
       e1.onclick=function(){recForm(r)};d1.onclick=function(){if(confirm('Удалить запись?'))del(r.id)};
       ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
     });
-  }else if(S.tab==='buy'){renderBuy(app,a)}else if(S.tab==='gal'){renderGal(app,a)}else if(S.tab==='adm'&&ME.owner){renderAdmin(app)}else{
+  }else if(S.tab==='buy'){renderBuy(app,a)}else if(S.tab==='gal'){renderGal(app,a)}else if(S.tab==='docs'){renderDocs(app,a)}else if(S.tab==='adm'&&ME.owner){renderAdmin(app)}else{
     var pb=el('button','add','+ Запчасть');pb.onclick=function(){partForm()};app.appendChild(pb);
     var fp=flt(parts);
     if(!fp.length)app.appendChild(el('div','empty','Здесь будут артикулы, цены и заметки по запчастям.'));
@@ -542,6 +549,78 @@ function renderGal(app,a){
     ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);g.appendChild(c);
   });
   app.appendChild(g);
+}
+
+/* ---------- документы ---------- */
+var DOCKINDS=['ПТС','Свидетельство о регистрации','Страховка','Техосмотр','Договор купли-продажи','Гарантия','Права / разрешение','Другое'],DOCURL={};
+function daysLeft(u){if(!u)return null;var t=new Date();t.setHours(0,0,0,0);return Math.round((new Date(u+'T00:00:00')-t)/86400000)}
+function docState(d){var n=daysLeft(d.until);
+  if(n===null)return {txt:'без срока',cls:'mut'};
+  if(n<0)return {txt:'просрочен на '+(-n)+' дн.',cls:'bad'};
+  if(n<=30)return {txt:'осталось '+n+' дн.',cls:'warn'};
+  return {txt:'до '+fdate(d.until),cls:'ok'};}
+function docName(d){return d.kind+(d.title?' · '+d.title:'')}
+function docsWarn(a){return by('doc').some(function(d){var n=daysLeft(d.until);return d.atv===a.id&&n!==null&&n<=30})}
+function docsAlert(app,a){
+  var l=by('doc').filter(function(d){var n=daysLeft(d.until);return d.atv===a.id&&n!==null&&n<=30}).sort(function(x,y){return daysLeft(x.until)-daysLeft(y.until)});
+  if(!l.length)return;
+  var c=el('div','card');c.style.cssText='padding:10px;cursor:pointer';
+  var st=docState(l[0]);c.appendChild(el('span',st.cls,'⚠️ '+docName(l[0])+': '+st.txt+(l.length>1?' и ещё '+(l.length-1):'')));
+  c.onclick=function(){S.tab='docs';render()};app.appendChild(c);
+}
+function docForm(a,d){
+  openForm(d?'Изменить документ':'Новый документ',[
+    ['kind','Тип документа','sel','','',DOCKINDS],
+    ['title','Название','text','','Например: ОСАГО Ингосстрах'],
+    ['num','Номер / серия','text'],
+    ['until','Действует до','date'],
+    ['notes','Заметки','area']
+  ],d,function(x){x.t='doc';x.atv=a.id;x.photos=(d&&d.photos)||[];x.added=(d&&d.added)||today();put(d?d.id:uid(),x)});
+}
+function addDocPhoto(it,btn){
+  pickFile('image/*',async function(file){
+    btn.textContent='Загрузка…';
+    try{var blob=await toJpeg(file),path=UID+'/'+uid()+'.jpg';
+      var r=await sb.storage.from('docs').upload(path,blob,{contentType:'image/jpeg'});if(r.error)throw r.error;
+      put(it.id,Object.assign({},it,{photos:(it.photos||[]).concat(path)}))}
+    catch(e){btn.textContent='📷 Скан / фото';alert(errMsg(e,'Не удалось загрузить скан'))}
+  });
+}
+function showDocPhoto(it,p,url){
+  var b=$('#mb');b.textContent='';var im=document.createElement('img');im.src=url;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
+  var r=el('div','acts'),cl=el('button','','Закрыть'),dl=el('button','g','Удалить скан');
+  cl.onclick=function(){$('#m').classList.remove('on');b.textContent=''};
+  dl.onclick=function(){if(!confirm('Удалить скан?'))return;$('#m').classList.remove('on');b.textContent='';
+    put(it.id,Object.assign({},it,{photos:(it.photos||[]).filter(function(x){return x!==p})}));sb.storage.from('docs').remove([p]).catch(function(){})};
+  r.appendChild(cl);r.appendChild(dl);b.appendChild(r);$('#m').classList.add('on');
+}
+function fillDocImgs(){
+  var need=[].slice.call(document.querySelectorAll('img[data-p]')).filter(function(i){return !i.getAttribute('src')});
+  if(!need.length||!sb)return;
+  sb.storage.from('docs').createSignedUrls(need.map(function(i){return i.dataset.p}),3600).then(function(r){
+    if(r.error||!r.data)return;
+    r.data.forEach(function(x){if(x.signedUrl)need.forEach(function(i){if(i.dataset.p===x.path)i.src=x.signedUrl})});
+  });
+}
+function renderDocs(app,a){
+  var h=el('div','mut','🔒 Документы и сканы видны только вам: другие участники и вкладка владельца их не показывают.');h.style.marginBottom='10px';app.appendChild(h);
+  var ab=el('button','add','+ Добавить документ');ab.onclick=function(){docForm(a)};app.appendChild(ab);
+  var l=by('doc').filter(function(d){return d.atv===a.id}).sort(function(x,y){
+    var p=daysLeft(x.until),q=daysLeft(y.until);if(p===null&&q===null)return 0;if(p===null)return 1;if(q===null)return -1;return p-q});
+  if(!l.length){app.appendChild(el('div','empty','Здесь будут ПТС, страховка, техосмотр и другие документы. Сфотографируйте их, чтобы всегда были под рукой, и следите за сроками.'));return}
+  l.forEach(function(d){
+    var c=el('div','card'),rw=el('div','row'),st=docState(d);
+    rw.appendChild(el('b','',docName(d)));rw.appendChild(el('span',st.cls,st.txt));c.appendChild(rw);
+    if(d.num)c.appendChild(el('div','mut','№ '+d.num));
+    if(d.notes)c.appendChild(el('div','mut',d.notes));
+    var w=el('div');w.style.marginTop='6px';
+    (d.photos||[]).forEach(function(p){var im=document.createElement('img');im.className='thumb';im.dataset.p=p;im.onclick=function(){if(im.getAttribute('src'))showDocPhoto(d,p,im.src)};w.appendChild(im)});
+    var pb=el('button','g','📷 Скан / фото');pb.onclick=function(){addDocPhoto(d,pb)};w.appendChild(pb);c.appendChild(w);
+    var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+    e1.onclick=function(){docForm(a,d)};d1.onclick=function(){if(confirm('Удалить документ и его сканы?'))del(d.id)};
+    ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
+  });
+  fillDocImgs();
 }
 
 /* ---------- участники, установка, перенос ---------- */
