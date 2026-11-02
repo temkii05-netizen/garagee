@@ -198,10 +198,10 @@ $('#m').onclick=function(e){if(e.target.id==='m'){$('#m').classList.remove('on')
 
 function curAtv(){var a=by('atv');if(!a.length)return null;return a.find(function(x){return x.id===S.atv})||a[0]}
 
-function icon(a){return {'Питбайк':'🏍️','Эндуро':'🏁'}[a.kind]||'🛞'}
+function icon(a){return {'Питбайк':'🏍️','Эндуро':'🏁','Машина':'🚗'}[a.kind]||'🛞'}
 function atvForm(a){
   openForm(a?'Изменить технику':'Новая техника',[
-    ['kind','Тип','sel','','',['Квадроцикл','Питбайк','Эндуро']],
+    ['kind','Тип','sel','','',['Квадроцикл','Питбайк','Эндуро','Машина']],
     ['name','Название','text','','Например: CFMOTO 520, KTM 300'],
     ['odo','Пробег / моточасы сейчас','number'],
     ['unit','Единица (км или м/ч)','text','км'],
@@ -264,7 +264,7 @@ function render(){
   var app=$('#app');app.textContent='';migBanner(app);
   var atvs=by('atv'),a=curAtv();
   if(!a){
-    var e=el('div','empty');e.appendChild(el('p','','Добавьте свою технику (квадроцикл, питбайк или эндуро), чтобы вести журнал обслуживания.'));
+    var e=el('div','empty');e.appendChild(el('p','','Добавьте свою технику (квадроцикл, питбайк, эндуро или машину), чтобы вести журнал обслуживания.'));
     var b=el('button','','+ Добавить технику');b.onclick=function(){atvForm()};e.appendChild(b);app.appendChild(e);return;
   }
   S.atv=a.id;
@@ -300,7 +300,7 @@ function render(){
   docsAlert(app,a);
 
   var tabs=el('div','tabs');
-  [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея'],['docs','Док.']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]+(t[0]==='docs'&&docsWarn(a)?' ⚠️':''));b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
+  [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея'],['docs','Документы']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]+(t[0]==='docs'&&docsWarn(a)?' ⚠️':''));b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
   app.appendChild(tabs);
   if(S.tab!=='adm'&&S.tab!=='docs')filterBar(app);
 
