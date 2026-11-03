@@ -14,7 +14,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Гараж: квадроциклы</title>
 <style>
-:root{color-scheme:light;--bg:#FFFFFF;--card:#fff;--tx:#0F172A;--mut:#5B6577;--ac:#2563EB;--acx:#fff;--bd:#E7E8EC;--soft:#F2F3F5;--softx:#1F2937;--amb:#FEF3C7;--ok:#15803D;--warn:#B45309;--bad:#B91C1C;--ic:#8A94A6;--hlbg:#FFF3E4;--hlbd:#F2C48D;--hltx:#7C4A12;--hlic:#D97706;--badbg:#FDECEA;--badbd:#F3B4AD;--sh:0 0 0 1px #ECEDF0,0 6px 18px rgba(15,23,42,.05);--sh2:0 10px 24px rgba(37,99,235,.32);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{color-scheme:light;--hero:#0F172A;--bg:#FFFFFF;--card:#fff;--tx:#0F172A;--mut:#5B6577;--ac:#2563EB;--acx:#fff;--bd:#E7E8EC;--soft:#F2F3F5;--softx:#1F2937;--amb:#FEF3C7;--ok:#15803D;--warn:#B45309;--bad:#B91C1C;--ic:#8A94A6;--hlbg:#FFF3E4;--hlbd:#F2C48D;--hltx:#7C4A12;--hlic:#D97706;--badbg:#FDECEA;--badbd:#F3B4AD;--sh:0 0 0 1px #ECEDF0,0 6px 18px rgba(15,23,42,.05);--sh2:0 10px 24px rgba(37,99,235,.32);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="dark"]{color-scheme:dark;--hero:#1B3566;--bg:#0B1730;--card:#13254A;--tx:#E8EEFA;--mut:#9FB0CF;--ac:#4F8CFF;--acx:#0B1730;--bd:#223A66;--soft:#1C335F;--softx:#DCE7FF;--amb:#3A2E12;--ok:#5CC08A;--warn:#E8A93A;--bad:#F0877B;--ic:#8FA3C7;--hlbg:#3A2A14;--hlbd:#8A5A1E;--hltx:#F5C98A;--hlic:#F0A83A;--badbg:#3A1C1C;--badbd:#8A3A36;--sh:0 0 0 1px #223A66;--sh2:0 8px 20px rgba(79,140,255,.25)}
+.tgl{flex:0 0 auto;width:38px;height:38px;padding:0;border-radius:50%;background:var(--soft);color:var(--softx);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -67,20 +69,52 @@ label.c input{width:auto}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .gi{padding:10px;margin:0}.gi video,.gi img{display:block;width:100%;max-height:60vh;object-fit:contain;border-radius:16px;background:#000}
 .done{text-decoration:line-through;color:var(--mut)}
+.hd{display:flex;align-items:center;gap:8px;margin:0 2px 12px}.hd h1{font-size:18px}
+body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.vsw{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding:2px}.vsw::-webkit-scrollbar{display:none}
+.vsw button{flex:0 0 auto;background:var(--card);color:var(--tx);box-shadow:var(--sh);border-radius:999px;padding:9px 14px;font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center}
+.vsw button.on{background:var(--tx);color:var(--card)}
+.vsw .ic{width:18px;height:18px}
+.hero{background:var(--hero);color:#fff;border-radius:28px;padding:18px;margin-bottom:12px}
+.hero .hr{display:flex;gap:12px;align-items:flex-start}
+.hero .lb{font-size:12px;color:#CBD5E1;letter-spacing:.06em;text-transform:uppercase}
+.hero .nm{font-size:24px;font-weight:800;line-height:1.15;word-break:break-word}
+.hero .av{flex:0 0 52px;width:52px;height:52px;background:rgba(255,255,255,.14);padding:4px}
+.plate{display:inline-block;background:#fff;color:#0F172A;border-radius:6px;padding:2px 8px;font-size:13px;font-weight:800;letter-spacing:.04em;white-space:nowrap;margin-top:6px}
+.hbtn{flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;padding:0;display:flex;align-items:center;justify-content:center;margin-left:auto}
+.hst{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}.hst b{display:block;font-size:20px;font-weight:800}.hst span{font-size:12px;color:#CBD5E1}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tile{background:var(--card);color:var(--tx);box-shadow:var(--sh);border-radius:22px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:10px;font-weight:400;min-width:0}
+.tile .ti{width:40px;height:40px;border-radius:12px;background:var(--soft);color:var(--tx);display:flex;align-items:center;justify-content:center}
+.tile b{display:block;font-size:15px;font-weight:700}.tile small{display:block;font-size:12px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.hl{background:var(--hlbg);box-shadow:inset 0 0 0 1.5px var(--hlbd),var(--sh)}.tile.hl small{color:var(--hltx)}.tile.hl .ti{background:var(--card);color:var(--hlic)}
+.tile.bad{background:var(--badbg);box-shadow:inset 0 0 0 1.5px var(--badbd),var(--sh)}.tile.bad small{color:var(--bad)}.tile.bad .ti{background:var(--card);color:var(--bad)}
+.bnav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);display:flex;justify-content:center;padding:4px 6px calc(8px + env(safe-area-inset-bottom,0px));z-index:4}
+.bnav>div{display:flex;width:100%;max-width:720px}
+.bnav button{flex:1;background:none;color:var(--mut);border-radius:12px;padding:8px 0 4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600}
+.bnav button.on{color:var(--ac);font-weight:800}
+.bnav .ic{width:24px;height:24px}
+.back{display:flex;align-items:center;gap:8px;margin-bottom:14px;min-width:0}
+.back button{flex:0 0 auto;background:var(--soft);color:var(--tx);border-radius:999px;padding:8px 14px 8px 8px;display:flex;gap:4px;align-items:center;font-weight:600;font-size:14px;max-width:55%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.back h2{margin:0;font-size:20px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow{width:100%;display:flex;align-items:center;gap:12px;background:var(--card);color:var(--tx);box-shadow:var(--sh);border-radius:20px;padding:14px 16px;margin-bottom:10px;font-weight:600;text-align:left}
+.prow .ic:last-child{margin-left:auto;color:var(--mut);width:18px;height:18px}
+.bars div{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0}.bars i{display:block;height:10px;border-radius:5px;background:var(--ac);min-width:2px}.bars span:first-child{width:34px;color:var(--mut)}.bars em{font-style:normal;margin-left:auto;font-weight:700;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><h1>🏍️ Гараж</h1><span class="mut" id="sync"></span></div>
+  <div class="hd"><h1>Гараж</h1><span class="mut" id="sync" style="flex:1"></span><button class="tgl" id="themeBtn" aria-label="Сменить тему"></button></div>
   <div id="app"></div>
+  <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">by laker.</div>
+    <div style="margin-top:8px">Владелец приложения видит, кто заходит и что вы добавляете: технику, записи, запчасти и фото.</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
 <script>
-var ME={owner:false},ADM={},items=[],col=null,assets=null,S={tab:'log',atv:null,y:'',m:'',asc:false,open:{}};
+var ME={owner:false},ADM={},items=[],col=null,assets=null,S={grp:null,sec:null,lastGrp:'moto',y:'',m:'',asc:false,open:{}};
 var $=function(s){return document.querySelector(s)};
 function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -137,7 +171,7 @@ async function init(){
   var stage='старт',tg=window.Telegram&&Telegram.WebApp;
   if(!tg||!tg.initData){msg('Откройте приложение через Telegram: найдите своего бота и нажмите кнопку меню.');return}
   tg.ready();tg.expand();
-  try{tg.setHeaderColor('#FFFFFF');tg.setBackgroundColor('#FFFFFF')}catch(e){}
+  try{var dk=document.documentElement.getAttribute('data-theme')==='dark';tg.setHeaderColor(dk?'#0B1730':'#FFFFFF');tg.setBackgroundColor(dk?'#0B1730':'#FFFFFF')}catch(e){}
   if(!SUPA_URL||!SUPA_KEY||SUPA_KEY.indexOf('ВСТАВЬТЕ')===0){msg('Не заполнен файл config.js (адрес проекта и ключ).');return}
   msg('Загрузка…');
   var wd=setTimeout(function(){msg('Долго нет ответа ['+stage+']. Закройте и откройте приложение заново.')},15000);
@@ -196,17 +230,44 @@ function openForm(title,fields,init,save){
 function i0(i){i.style.borderColor='var(--bad)';i.focus()}
 $('#m').onclick=function(e){if(e.target.id==='m'){$('#m').classList.remove('on');$('#mb').textContent=''}};
 
-function curAtv(){var a=by('atv');if(!a.length)return null;return a.find(function(x){return x.id===S.atv})||a[0]}
+function grpOf(x){return x.kind==='Машина'?'car':'moto'}
+function curAtv(){
+  var g=(S.grp==='car'||S.grp==='moto')?S.grp:S.lastGrp;
+  var l=by('atv').filter(function(x){return grpOf(x)===g});
+  if(!l.length)return S.grp==='gal'?(by('atv')[0]||null):null;
+  return l.find(function(x){return x.id===S['atv_'+g]})||l[0];
+}
 
 function icon(a){return {'Питбайк':'🏍️','Эндуро':'🏁','Машина':'🚗'}[a.kind]||'🛞'}
-function atvForm(a){
+var KIND_HINT={
+  'Квадроцикл':{name:'Например: CFMOTO 520, Polaris Sportsman',interval:'Например: 1000',unit:'км'},
+  'Питбайк':{name:'Например: Kayo, BSE, Apollo',interval:'Например: 20',unit:'м/ч'},
+  'Эндуро':{name:'Например: KTM 300, Husqvarna TE 250',interval:'Например: 30',unit:'м/ч'},
+  'Машина':{name:'Например: Toyota Camry, Toyota RAV4',interval:'Например: 10000',unit:'км'}};
+function atvForm(a,preset){
+  var k0=(a&&a.kind)||preset||'Квадроцикл',h0=KIND_HINT[k0]||KIND_HINT['Квадроцикл'];
   openForm(a?'Изменить технику':'Новая техника',[
     ['kind','Тип','sel','','',['Квадроцикл','Питбайк','Эндуро','Машина']],
-    ['name','Название','text','','Например: CFMOTO 520, KTM 300'],
+    ['name','Название','text','',h0.name],
     ['odo','Пробег / моточасы сейчас','number'],
-    ['unit','Единица (км или м/ч)','text','км'],
-    ['interval','Интервал планового ТО','number','','Например: 1000']
-  ],a,function(d){var id=a?a.id:uid();put(id,Object.assign({},a||{},d,{t:'atv'}));if(!a)S.atv=id})
+    ['unit','Единица (км или м/ч)','text',h0.unit],
+    ['interval','Интервал планового ТО','number','',h0.interval],
+    ['plate','Госномер (если есть)','text','','А123ВС 77'],
+    ['year','Год выпуска','number','','2019'],
+    ['vin','VIN (если есть)','text','','17 символов']
+  ],a,function(d){
+    if(d.plate)d.plate=d.plate.toUpperCase();if(d.vin)d.vin=d.vin.toUpperCase();
+    var id=a?a.id:uid();put(id,Object.assign({},a||{},d,{t:'atv'}));
+    var g=grpOf(d);S.grp=g;S.lastGrp=g;S['atv_'+g]=id;S.sec=null;render();
+  });
+  var box=$('#mb'),sel=box.querySelector('select'),ins=box.querySelectorAll('input');
+  var nm=ins[0],un=ins[2],iv=ins[3];
+  sel.value=k0;
+  sel.onchange=function(){
+    var h=KIND_HINT[sel.value]||KIND_HINT['Квадроцикл'];
+    nm.placeholder=h.name;iv.placeholder=h.interval;
+    if(!a)un.value=h.unit;  // у новой техники подставляем единицу; у существующей не трогаем
+  };
 }
 function recForm(r,pre){
   var a=curAtv();
@@ -255,56 +316,128 @@ droplet:'<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.
 filter:'<path d="M22 3H2l8 9.46V19l4 2v-8.54z"/>',
 badge:'<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
 plus:'<path d="M5 12h14M12 5v14"/>',
+cog:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+doc:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+tire:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/>',
+cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6"/>',
+image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+moto:'<circle cx="5.5" cy="16" r="3.5"/><circle cx="18.5" cy="16" r="3.5"/><path d="M5.5 16 9 9h5l4.5 7M14 9l-2-4h3"/>',
+car:'<path d="M3 13l2-5.5A2 2 0 0 1 6.9 6h10.2a2 2 0 0 1 1.9 1.5L21 13v4a1 1 0 0 1-1 1h-1M3 13v4a1 1 0 0 0 1 1h1M3 13h18M9 18h6"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+back:'<path d="m15 18-6-6 6-6"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
 pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'};
 function ico(n){var s=document.createElement('span');s.className='ic';s.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||'')+'</svg>';return s}
 function recIcon(r){return /масл/i.test(r.title)?'droplet':r.std?'badge':'wrench'}
 function chipIcon(t){return /масл/i.test(t)?'droplet':/фильтр/i.test(t)?'filter':null}
 function plusBtn(t){var b=el('button','add');b.appendChild(ico('plus'));b.appendChild(document.createTextNode(t));return b}
+var SECT={log:['Обслуживание','wrench'],parts:['Запчасти','cog'],docs:['Документы','doc'],tire:['Шины','tire'],buy:['Покупки','cart'],exp:['Расходы','ruble'],adm:['Участники','user']};
+function plural(n,a,b,c){var m=n%10,h=n%100;return n+' '+(m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c)}
+function backBar(app,label,title){
+  var w=el('div','back'),b=el('button');b.appendChild(ico('back'));b.appendChild(document.createTextNode(label));
+  b.onclick=function(){S.sec=null;render();window.scrollTo(0,0)};w.appendChild(b);w.appendChild(el('h2','',title));app.appendChild(w);
+}
+function renderNav(){
+  var n=$('#bnav').firstChild;n.textContent='';
+  [['moto','moto','Мото'],['car','car','Авто'],['gal','image','Галерея'],['prof','user','Профиль']].forEach(function(t){
+    var b=el('button',S.grp===t[0]?'on':'');b.appendChild(ico(t[1]));b.appendChild(el('span','',t[2]));
+    b.onclick=function(){if(S.grp===t[0]&&!S.sec)return;S.grp=t[0];S.sec=null;render();window.scrollTo(0,0)};n.appendChild(b);
+  });
+}
+function toInfo(a,recs){
+  var lastTO=recs.find(function(r){return r.std&&r.odo!==''});
+  if(!(a.interval&&lastTO))return null;
+  var left=lastTO.odo+a.interval-(a.odo||0);
+  return {left:left,cls:left<0?'bad':left<a.interval*0.1?'hl':''};
+}
 function render(){
   var app=$('#app');app.textContent='';migBanner(app);
-  var atvs=by('atv'),a=curAtv();
-  if(!a){
-    var e=el('div','empty');e.appendChild(el('p','','Добавьте свою технику (квадроцикл, питбайк, эндуро или машину), чтобы вести журнал обслуживания.'));
-    var b=el('button','','+ Добавить технику');b.onclick=function(){atvForm()};e.appendChild(b);app.appendChild(e);return;
+  if(!S.grp){var all=by('atv');S.grp=all.some(function(x){return grpOf(x)==='moto'})||!all.length?'moto':'car'}
+  renderNav();
+  document.querySelector('.wrap').style.maxWidth=S.grp==='gal'?'1100px':'720px';
+  if(S.grp==='gal'){
+    app.appendChild(el('h2','','Галерея')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
+    var ga=curAtv();
+    if(!ga){app.appendChild(el('div','empty','Сначала добавьте технику во вкладке «Мото» или «Авто».'));return}
+    filterBar(app);renderGal(app,ga);return;
   }
-  S.atv=a.id;
-  var sel=document.createElement('select');
-  atvs.forEach(function(x){var o=el('option','',x.name);o.value=x.id;if(x.id===a.id)o.selected=true;sel.appendChild(o)});
-  sel.onchange=function(){S.atv=sel.value;render()};
-  var tp=el('div','top');
-  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src=BASE+a.photo;av.appendChild(aim)}else av.textContent=icon(a);
-  av.title='Фото техники';av.onclick=function(){atvPhoto(a)};tp.appendChild(av);
-  var mid=el('div','tmid');mid.appendChild(sel);mid.appendChild(el('div','mut',(a.kind||'Квадроцикл')+' · '+(a.odo||0).toLocaleString('ru-RU')+' '+a.unit));tp.appendChild(mid);
-  var eb=el('button','g');eb.appendChild(ico('pencil'));eb.title='Изменить';eb.onclick=function(){atvForm(a)};tp.appendChild(eb);
-  var nb=el('button','g');nb.appendChild(ico('plus'));nb.title='Новая техника';nb.onclick=function(){atvForm()};tp.appendChild(nb);
-  app.appendChild(tp);
-  document.querySelector('.wrap').style.maxWidth=S.tab==='gal'?'1100px':'720px';
-
+  if(S.grp==='prof'){renderProfile(app);return}
+  var g=S.grp,car=g==='car',list=by('atv').filter(function(x){return grpOf(x)===g}),a=curAtv();
+  if(!a){
+    var e=el('div','card');e.style.cssText='text-align:center;padding:28px 18px';
+    var ei=ico(car?'car':'moto');ei.style.cssText='width:44px;height:44px;margin:0 auto 10px;display:flex';e.appendChild(ei);
+    e.appendChild(el('div','',car?'Здесь будут ваши машины':'Здесь будет ваша мототехника')).style.cssText='font-weight:800;font-size:18px';
+    e.appendChild(el('div','mut',car?'Журнал обслуживания, документы, шины и расходы.':'Квадроциклы, питбайки и эндуро: обслуживание, запчасти и документы.')).style.margin='6px 0 16px';
+    var eb=plusBtn(car?'Добавить машину':'Добавить технику');eb.style.marginBottom='0';eb.onclick=function(){atvForm(null,car?'Машина':'Квадроцикл')};e.appendChild(eb);
+    app.appendChild(e);return;
+  }
+  S['atv_'+g]=a.id;S.lastGrp=g;
   var recs=by('rec').filter(function(r){return r.atv===a.id}).sort(function(x,y){return (y.date||'').localeCompare(x.date||'')||(y.updated||0)-(x.updated||0)});
   var parts=by('part').filter(function(p){return p.atv===a.id}).sort(function(x,y){return x.name.localeCompare(y.name,'ru')});
 
-  var st=el('div','stat');
-  function sbox(v,l,c,ic,hl){var d=el('div',hl||'');if(ic){var i=ico(ic);i.className+=' si';d.appendChild(i)}d.appendChild(el('b',c||'',v));d.appendChild(el('span','mut',l));st.appendChild(d)}
-  sbox((a.odo||0).toLocaleString('ru-RU'),a.unit+' сейчас',null,'gauge');
-  var lastTO=recs.find(function(r){return r.std&&r.odo!==''});
-  if(a.interval&&lastTO){
-    var left=lastTO.odo+a.interval-(a.odo||0);
-    sbox(left>=0?left+' '+a.unit:'−'+(-left)+' '+a.unit,'до ТО',null,'wrench',left<0?'hl bad':'hl');
-  }else sbox('—','до ТО',null,'wrench');
-  var year=String(new Date().getFullYear());
-  var tot=recs.reduce(function(s,r){return s+(Number(r.cost)||0)},0);
-  var ty=recs.filter(function(r){return (r.date||'').indexOf(year)===0}).reduce(function(s,r){return s+(Number(r.cost)||0)},0);
-  sbox(money(tot),'всего',null,'ruble');
-  app.appendChild(st);
-  usageBar(app);
-  docsAlert(app,a);
+  if(S.sec&&SECT[S.sec]){
+    backBar(app,a.name,SECT[S.sec][0]);
+    if(S.sec==='log'||S.sec==='parts'||S.sec==='buy'||S.sec==='exp')filterBar(app);
+    if(S.sec==='log')renderLog(app,a,recs);
+    else if(S.sec==='parts')renderParts(app,a,recs,parts);
+    else if(S.sec==='buy')renderBuy(app,a);
+    else if(S.sec==='docs')renderDocs(app,a);
+    else if(S.sec==='tire')renderTire(app,a);
+    else if(S.sec==='exp')renderExp(app,a,recs);
+    return;
+  }
 
-  var tabs=el('div','tabs');
-  [['log','Журнал'],['parts','Запчасти'],['buy','Купить'],['gal','Галерея'],['docs','Документы']].concat(ME.owner?[['adm','👥']]:[]).forEach(function(t){var b=el('button',S.tab===t[0]?'on':'',t[1]+(t[0]==='docs'&&docsWarn(a)?' ⚠️':''));b.onclick=function(){S.tab=t[0];render()};tabs.appendChild(b)});
-  app.appendChild(tabs);
-  if(S.tab!=='adm'&&S.tab!=='docs')filterBar(app);
+  // переключатель техники в группе
+  var sw=el('div','vsw');
+  list.forEach(function(x){var b=el('button',x.id===a.id?'on':'',x.name);b.onclick=function(){S['atv_'+g]=x.id;render()};sw.appendChild(b)});
+  var nb=el('button');nb.appendChild(ico('plus'));nb.appendChild(document.createTextNode(car?'Машина':'Техника'));nb.onclick=function(){atvForm(null,car?'Машина':'Квадроцикл')};sw.appendChild(nb);
+  app.appendChild(sw);
 
-  if(S.tab==='log'){
+  // карточка техники
+  var h=el('div','hero'),hr=el('div','hr');
+  var av=el('div','av');if(a.photo){var aim=document.createElement('img');aim.src=BASE+a.photo;av.appendChild(aim)}else av.textContent=icon(a);
+  av.title='Фото техники';av.onclick=function(){atvPhoto(a)};hr.appendChild(av);
+  var nm=el('div');nm.style.minWidth='0';nm.appendChild(el('div','lb',a.kind||'Квадроцикл'));nm.appendChild(el('div','nm',a.name));
+  if(a.plate)nm.appendChild(el('span','plate',a.plate));hr.appendChild(nm);
+  var hb=el('button','hbtn');hb.appendChild(ico('pencil'));hb.setAttribute('aria-label','Изменить технику');hb.onclick=function(){atvForm(a)};hr.appendChild(hb);
+  h.appendChild(hr);
+  var hs=el('div','hst');
+  function hstat(v,l){var d=el('div');d.appendChild(el('b','',v));d.appendChild(el('span','',l));hs.appendChild(d)}
+  hstat((a.odo||0).toLocaleString('ru-RU'),a.unit==='м/ч'?'моточасов':a.unit+' пробег');
+  if(a.year)hstat(String(a.year),'год');
+  if(a.vin)hstat('…'+String(a.vin).slice(-8),'VIN');
+  h.appendChild(hs);app.appendChild(h);
+
+  // плитки
+  var tl=el('div','tiles');
+  function tile(key,label,icn,sub,cls,go){
+    var b=el('button','tile'+(cls?' '+cls:''));var ti=el('span','ti');ti.appendChild(ico(icn));b.appendChild(ti);
+    var t=el('span');t.appendChild(el('b','',label));t.appendChild(el('small','',sub));b.appendChild(t);
+    b.onclick=go||function(){S.sec=key;render();window.scrollTo(0,0)};tl.appendChild(b);
+  }
+  var to=toInfo(a,recs);
+  tile('log','Обслуживание','wrench',to?(to.left>=0?'ТО через '+to.left.toLocaleString('ru-RU')+' '+a.unit:'ТО просрочено на '+(-to.left)+' '+a.unit):(recs.length?plural(recs.length,'запись','записи','записей'):'Нет записей'),to&&to.cls);
+  tile('parts','Запчасти','cog',parts.length?plural(parts.length,'позиция','позиции','позиций'):'Пусто');
+  var dl=by('doc').filter(function(d){return d.atv===a.id}),dn=dl.filter(function(d){return d.until}).sort(function(x,y){return daysLeft(x.until)-daysLeft(y.until)})[0];
+  var dsub=dl.length?plural(dl.length,'документ','документа','документов'):'Пусто',dcls='';
+  if(dn){var dd=daysLeft(dn.until);if(dd<=30){dsub=dn.kind+': '+(dd<0?'просрочен':dd+' дн.');dcls=dd<0?'bad':'hl'}}
+  tile('docs','Документы','doc',dsub,dcls);
+  if(car){
+    var tc=by('tire').find(function(t){return t.atv===a.id&&t.on});
+    tile('tire','Шины','tire',tc?tc.season+(tc.since?' · с '+fdate(tc.since).slice(0,5):''):'Не указаны');
+  }else{
+    var mc=by('media').filter(function(x){return x.atv===a.id}).length;
+    tile('gal','Галерея','image',mc?plural(mc,'файл','файла','файлов'):'Пусто','',function(){S.grp='gal';S.sec=null;render();window.scrollTo(0,0)});
+  }
+  var bn=by('buy').filter(function(x){return x.atv===a.id&&!x.done}).length;
+  tile('buy','Покупки','cart',bn?bn+' к заказу':'Список пуст');
+  var yr=String(new Date().getFullYear()),ys=recs.filter(function(r){return (r.date||'').indexOf(yr)===0}).reduce(function(s,r){return s+(Number(r.cost)||0)},0);
+  tile('exp','Расходы','ruble',money(ys)+' за '+yr);
+  app.appendChild(tl);
+  var ab=plusBtn('Новая запись');ab.onclick=function(){recForm()};app.appendChild(ab);
+}
+function renderLog(app,a,recs){
     var ab=plusBtn('Запись об обслуживании');ab.onclick=function(){recForm()};app.appendChild(ab);
     var fr=flt(recs);
     if(!fr.length)app.appendChild(el('div','empty','Нет записей за выбранный период.'));
@@ -323,7 +456,8 @@ function render(){
       e1.onclick=function(){recForm(r)};d1.onclick=function(){if(confirm('Удалить запись?'))del(r.id)};
       ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
     });
-  }else if(S.tab==='buy'){renderBuy(app,a)}else if(S.tab==='gal'){renderGal(app,a)}else if(S.tab==='docs'){renderDocs(app,a)}else if(S.tab==='adm'&&ME.owner){renderAdmin(app)}else{
+}
+function renderParts(app,a,recs,parts){
     var pb=plusBtn('Запчасть');pb.onclick=function(){partForm()};app.appendChild(pb);
     var fp=flt(parts);
     if(!fp.length)app.appendChild(el('div','empty','Здесь будут артикулы, цены и заметки по запчастям.'));
@@ -339,10 +473,71 @@ function render(){
       photoStrip(p,c);
       var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
       e1.onclick=function(){partForm(p)};d1.onclick=function(){if(confirm('Удалить запчасть?'))del(p.id)};
-      var bb=el('button','g','🛒 Купить');bb.onclick=function(){put(uid(),{t:'buy',atv:a.id,name:p.name,qty:1,added:today(),price:p.price||'',notes:p.num?'№ '+p.num:'',done:false});S.tab='buy';render()};ac.appendChild(bb);
+      var bb=el('button','g','🛒 Купить');bb.onclick=function(){put(uid(),{t:'buy',atv:a.id,name:p.name,qty:1,added:today(),price:p.price||'',notes:p.num?'№ '+p.num:'',done:false});S.sec='buy';render()};ac.appendChild(bb);
       ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
     });
-  }
+}
+function renderExp(app,a,recs){
+  var yr=S.y||String(new Date().getFullYear());
+  var all=recs.reduce(function(s,r){return s+(Number(r.cost)||0)},0);
+  var yrecs=recs.filter(function(r){return (r.date||'').indexOf(yr)===0});
+  var ysum=yrecs.reduce(function(s,r){return s+(Number(r.cost)||0)},0);
+  var st=el('div','stat');st.style.gridTemplateColumns='1fr 1fr';
+  [[money(all),'за всё время'],[money(ysum),'за '+yr]].forEach(function(v){var d=el('div');d.appendChild(el('b','',v[0]));d.appendChild(el('span','mut',v[1]));st.appendChild(d)});
+  app.appendChild(st);
+  var mn=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'],ms=mn.map(function(){return 0});
+  yrecs.forEach(function(r){var m=Number((r.date||'').slice(5,7))-1;if(m>=0)ms[m]+=Number(r.cost)||0});
+  var mx=Math.max.apply(null,ms)||1,c=el('div','card');c.appendChild(el('b','','По месяцам, '+yr));
+  var bars=el('div','bars');
+  ms.forEach(function(v,i){var r=el('div');r.appendChild(el('span','',mn[i]));var bi=el('i');bi.style.width=Math.round(v/mx*60)+'%';if(!v)bi.style.background='var(--bd)';r.appendChild(bi);r.appendChild(el('em','',v?money(v):''));bars.appendChild(r)});
+  c.appendChild(bars);app.appendChild(c);
+  var top=flt(recs).filter(function(r){return Number(r.cost)>0}).sort(function(x,y){return y.cost-x.cost}).slice(0,5);
+  if(top.length){var t=el('div','card');t.appendChild(el('b','','Самые дорогие'));
+    top.forEach(function(r){var rw=el('div','row');rw.style.marginTop='8px';rw.appendChild(el('span','',r.title+' · '+fdate(r.date)));rw.appendChild(el('b','',money(r.cost)));t.appendChild(rw)});app.appendChild(t)}
+  app.appendChild(el('div','mut','Считаются суммы из записей обслуживания.')).style.textAlign='center';
+}
+function tireForm(a,t){
+  openForm(t?'Изменить комплект':'Новый комплект шин',[
+    ['season','Сезон','sel','','',['Зима','Лето','Всесезон']],
+    ['title','Марка и модель','text','','Например: Nokian Hakkapeliitta 10'],
+    ['size','Размер','text','','215/55 R17'],
+    ['since','Установлены (дата)','date'],
+    ['notes','Заметки (где хранятся, износ)','area']
+  ],t,function(d){d.t='tire';d.atv=a.id;d.on=t?!!t.on:false;d.photos=(t&&t.photos)||[];put(t?t.id:uid(),d)});
+  if(t&&t.season)$('#mb select').value=t.season;
+}
+function renderTire(app,a){
+  var ab=plusBtn('Комплект шин');ab.onclick=function(){tireForm(a)};app.appendChild(ab);
+  var l=by('tire').filter(function(x){return x.atv===a.id}).sort(function(x,y){return (y.on?1:0)-(x.on?1:0)||(y.since||'').localeCompare(x.since||'')});
+  if(!l.length){app.appendChild(el('div','empty','Добавьте летний и зимний комплекты, чтобы помнить размеры, марку и когда меняли.'));return}
+  l.forEach(function(t){
+    var c=el('div','card'),rw=el('div','row'),tt=el('div','ttl');tt.appendChild(ico('tire'));tt.appendChild(el('span','',t.season+(t.title?' · '+t.title:'')));rw.appendChild(tt);
+    if(t.on)rw.appendChild(el('span','chip','Установлены'));c.appendChild(rw);
+    var m=[];if(t.size)m.push(t.size);if(t.since)m.push('с '+fdate(t.since));if(m.length)c.appendChild(el('div','mut',m.join(' · '))).style.margin='4px 0 0 32px';
+    if(t.notes)c.appendChild(el('div','mut',t.notes)).style.marginTop='6px';
+    photoStrip(t,c);
+    var ac=el('div','acts');
+    if(!t.on){var on=el('button','g','Поставить');on.onclick=function(){
+      l.forEach(function(x){if(x.on&&x.id!==t.id)put(x.id,Object.assign({},x,{on:false}))});
+      put(t.id,Object.assign({},t,{on:true,since:t.since&&t.since>=today()?t.since:today()}))};ac.appendChild(on)}
+    var e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+    e1.onclick=function(){tireForm(a,t)};d1.onclick=function(){if(confirm('Удалить комплект?'))del(t.id)};
+    ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
+  });
+}
+function renderProfile(app){
+  if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
+  app.appendChild(el('h2','','Профиль')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
+  usageBar(app);
+  function row(icn,txt,go){var b=el('button','prow');b.appendChild(ico(icn));b.appendChild(el('span','',txt));b.appendChild(ico('chev'));b.onclick=go;app.appendChild(b)}
+  if(ME.owner)row('user','Участники и их записи',function(){S.sec='adm';render();window.scrollTo(0,0)});
+  var dk=document.documentElement.getAttribute('data-theme')==='dark';
+  row(dk?'sun':'moon',dk?'Включить белую тему':'Включить тёмно-синюю тему',function(){document.getElementById('themeBtn').click();render()});
+  row('plus','Добавить технику или машину',function(){atvForm(null,'Квадроцикл')});
+  var all=by('atv');
+  if(all.length){var c=el('div','card');c.appendChild(el('b','','Вся техника'));
+    all.forEach(function(x){var r=el('div','row');r.style.marginTop='8px';r.appendChild(el('span','',icon(x)+' '+x.name));
+      var e=el('button','g','Изменить');e.onclick=function(){atvForm(x)};r.appendChild(e);c.appendChild(r)});app.appendChild(c)}
 }
 /* ---------- photos ---------- */
 function photoStrip(it,c){
@@ -600,7 +795,7 @@ function docsAlert(app,a){
   var t=el('div','alt');t.appendChild(el('b','',l[0].kind));
   t.appendChild(el('span',st.cls,(l[0].title?' · '+l[0].title:'')+': '+st.txt+(l.length>1?' · ещё '+(l.length-1):'')));
   c.appendChild(t);c.appendChild(ico('chev'));
-  c.onclick=function(){S.tab='docs';render()};app.appendChild(c);
+  c.onclick=function(){S.sec='docs';render()};app.appendChild(c);
 }
 function docForm(a,d){
   openForm(d?'Изменить документ':'Новый документ',[
@@ -665,7 +860,7 @@ function startAdmin(){
     rs[0].data.forEach(function(p){ADM[p.id]={name:p.name||'Без имени',user:p.username?'@'+p.username:'',
       prof:{visits:p.visits,lastSeen:p.last_seen?new Date(p.last_seen).getTime():0},
       used:us[p.id]||0,r2:r2[p.id]||0,plan:p.plan_until,rows:ALL.filter(function(x){return x.owner===p.id})}});
-    if(S.tab==='adm')render();
+    if(S.sec==='adm')render();
   });
 }
 function fdt(ts){if(!ts)return '—';var d=new Date(ts);return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
@@ -744,7 +939,7 @@ function renderAdmin(app){
   });
 
   var h2=el('b','','Последние действия');h2.style.cssText='display:block;margin:14px 0 6px';app.appendChild(h2);
-  var lab={atv:'техника',rec:'запись',part:'запчасть',buy:'покупка',media:'галерея'};
+  var lab={atv:'техника',rec:'запись',part:'запчасть',buy:'покупка',media:'галерея',tire:'шины'};
   ALL.filter(function(x){return x.data.updated&&lab[x.data.t]})
     .sort(function(x,y){return y.data.updated-x.data.updated}).slice(0,30).forEach(function(x){
       var d=x.data,who=(ADM[x.owner]||{}).name||'?';
@@ -768,6 +963,20 @@ function migBanner(app){
   c.appendChild(bt);app.appendChild(c);
 }
 
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  var c=t==='dark'?'#0B1730':'#FFFFFF',b=document.getElementById('themeBtn');
+  if(b){b.textContent=t==='dark'?'☀️':'🌙';b.title=t==='dark'?'Белая тема':'Тёмно-синяя тема'}
+  var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',c);
+  try{var tg=window.Telegram&&Telegram.WebApp;if(tg){tg.setHeaderColor(c);tg.setBackgroundColor(c)}}catch(e){}
+}
+(function(){
+  var t='light';try{t=localStorage.getItem('theme')==='dark'?'dark':'light'}catch(e){}
+  applyTheme(t);
+  document.getElementById('themeBtn').onclick=function(){
+    t=t==='dark'?'light':'dark';try{localStorage.setItem('theme',t)}catch(e){}applyTheme(t);
+  };
+})();
 init();
 </script>
 </body>
