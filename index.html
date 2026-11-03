@@ -102,11 +102,17 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .prow{width:100%;display:flex;align-items:center;gap:12px;background:var(--card);color:var(--tx);box-shadow:var(--sh);border-radius:20px;padding:14px 16px;margin-bottom:10px;font-weight:600;text-align:left}
 .prow .ic:last-child{margin-left:auto;color:var(--mut);width:18px;height:18px}
 .bars div{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0}.bars i{display:block;height:10px;border-radius:5px;background:var(--ac);min-width:2px}.bars span:first-child{width:34px;color:var(--mut)}.bars em{font-style:normal;margin-left:auto;font-weight:700;white-space:nowrap}
+.sres{width:100%;display:flex;align-items:center;gap:12px;background:var(--card);color:var(--tx);box-shadow:var(--sh);border-radius:18px;padding:12px 14px;margin-bottom:8px;text-align:left;font-weight:400}
+.sres .ti{width:38px;height:38px;border-radius:12px;background:var(--soft);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sres b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sres small{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sres>span:nth-child(2){min-width:0;flex:1}
+mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
+.help h3{margin:0 0 6px;font-size:16px;font-weight:800;display:flex;gap:8px;align-items:center}.help p{margin:4px 0;font-size:14px;color:var(--tx)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hd"><h1>Гараж</h1><span class="mut" id="sync" style="flex:1"></span><button class="tgl" id="themeBtn" aria-label="Сменить тему"></button></div>
+  <div class="hd"><h1>Гараж</h1><span class="mut" id="sync" style="flex:1"></span><button class="tgl" id="searchBtn" aria-label="Поиск"></button><button class="tgl" id="themeBtn" aria-label="Сменить тему"></button></div>
   <div id="app"></div>
   <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
@@ -285,7 +291,34 @@ function recForm(r,pre){
     var o=r||pre||{};d.photos=o.photos||[];
     d.t='rec';d.atv=a.id;put(r?r.id:uid(),d);
     if(d.odo!==''&&d.odo>(a.odo||0)){put(a.id,Object.assign({},a,{odo:d.odo,odoAt:d.date||today()}))}
-  })
+  });
+  datePicks(a,!!r);
+}
+function isoDate(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function ago(days,months){var d=new Date();if(months)d.setMonth(d.getMonth()-months);if(days)d.setDate(d.getDate()-days);return isoDate(d)}
+function datePicks(a,editing){
+  var box=$('#mb'),di=box.querySelector('input[type=date]'),oi=box.querySelector('input[type=number]');
+  if(!di)return;
+  di.max=today();
+  var row=el('div','vsw');row.style.cssText='margin:8px 0 0;padding:2px';
+  var hint=el('div','mut');hint.style.cssText='margin-top:6px;display:none';
+  hint.textContent='Запись задним числом: укажите пробег на тот момент, если помните. Текущий пробег техники не уменьшится.';
+  var opts=[['Сегодня',ago(0)],['Вчера',ago(1)],['Неделю назад',ago(7)],['Месяц назад',ago(0,1)],['2 месяца',ago(0,2)],['3 месяца',ago(0,3)],['Полгода',ago(0,6)],['Год назад',ago(0,12)]];
+  var btns=[];
+  function mark(){btns.forEach(function(b){b.className=b.dataset.v===di.value?'on':''})}
+  function sync(){
+    var past=di.value&&di.value<today();
+    hint.style.display=past?'block':'none';
+    if(!editing&&oi){
+      if(past&&String(oi.value)===String(a.odo||'')){oi.value='';oi.placeholder='Пробег на тот момент'}
+      if(!past&&oi.value===''){oi.value=a.odo||'';oi.placeholder=''}
+    }
+    mark();
+  }
+  opts.forEach(function(o){var b=el('button','',o[0]);b.type='button';b.dataset.v=o[1];b.onclick=function(){di.value=o[1];sync()};btns.push(b);row.appendChild(b)});
+  di.parentNode.insertBefore(row,di.nextSibling);row.parentNode.insertBefore(hint,row.nextSibling);
+  di.addEventListener('change',sync);di.addEventListener('input',sync);
+  sync();
 }
 function partForm(p){
   var a=curAtv();
@@ -329,6 +362,8 @@ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
 back:'<path d="m15 18-6-6 6-6"/>',
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
 pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'};
 function ico(n){var s=document.createElement('span');s.className='ic';s.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||'')+'</svg>';return s}
 function recIcon(r){return /масл/i.test(r.title)?'droplet':r.std?'badge':'wrench'}
@@ -366,6 +401,7 @@ function render(){
   }
   if(S.grp==='prof'){renderProfile(app);return}
   if(S.grp==='docs'){renderDocsHome(app);return}
+  if(S.grp==='search'){renderSearch(app);return}
   var g=S.grp,car=g==='car',list=by('atv').filter(function(x){return grpOf(x)===g}),a=curAtv();
   if(!a){
     var e=el('div','card');e.style.cssText='text-align:center;padding:28px 18px';
@@ -584,11 +620,81 @@ function renderDocsHome(app){
   if(!cars.length&&!motos.length)app.appendChild(el('div','mut','Добавьте технику во вкладке «Мото» или «Авто», и здесь появятся её документы.')).style.cssText='text-align:center;margin-top:12px';
   var n=el('div','mut','🔒 Документы и фото видны только вам.');n.style.cssText='text-align:center;margin-top:14px';app.appendChild(n);
 }
+var HELP=[
+ ['plus','1. Добавьте технику',['Внизу выберите «Мото» (квадроциклы, питбайки, эндуро) или «Авто» (машины) и нажмите «+ Техника».','Укажите тип, название, пробег (км или моточасы) и интервал планового ТО. Для машины можно добавить госномер, год и VIN.','Нажмите на круг в тёмной карточке, чтобы поставить фото техники. Несколько машин переключаются кнопками над карточкой.']],
+ ['wrench','2. Ведите обслуживание',['«Новая запись»: что делали, дата, пробег, что заменили, стоимость, заметки и фото чека.','Отметьте «Это плановое ТО» — плитка «Обслуживание» покажет, сколько осталось до следующего, и подсветится, когда пора.','Для старых работ нажмите под датой «Месяц назад», «Полгода» и т.п. — пробег на тот момент можно оставить пустым.']],
+ ['gauge','3. Обновляйте пробег',['Кнопка «Обновить пробег» в карточке техники. Если пробег не обновлялся больше месяца, кнопка станет жёлтой.']],
+ ['cog','4. Разделы техники',['Запчасти — артикулы, цены, магазин. Кнопка «Купить» добавит деталь в покупки.','Покупки — что нужно заказать, купленное отмечайте галочкой.','Шины (у машин) — комплекты зима/лето, кнопка «Поставить» отмечает текущие.','Расходы — сколько потрачено за год и по месяцам.']],
+ ['doc','5. Документы',['Вкладка «Документы»: личные (права, паспорт), для каждой машины и мотоцикла.','Укажите срок действия — приложение подсветит, когда он подходит. Можно сразу сфотографировать документ, даже обе стороны.','Документы и их фото видны только вам.']],
+ ['image','6. Галерея',['Видео до 50 МБ и фото покатушек. Видео больше 20 МБ смотрите кнопкой «Отправить в чат с ботом».']],
+ ['search','7. Поиск',['Значок лупы вверху: ищет по записям, запчастям, покупкам, документам, шинам и галерее. Нажмите на результат — откроется нужный раздел.']],
+ ['user','8. Профиль',['Тема (белая или тёмно-синяя), занятое место, список всей техники и эта инструкция.']],
+ ['shield','Лимиты и приватность',['100 МБ на фото чеков и запчастей, 10 ГБ на галерею, видео до 50 МБ.','Владелец приложения видит, кто заходит, и записи, запчасти, фото. Документы — только вы.','Если что-то не грузится или «сессия истекла» — закройте приложение и откройте заново.']]];
+function renderHelp(app){
+  var w=el('div','help');
+  HELP.forEach(function(h){var c=el('div','card'),t=el('h3');t.appendChild(ico(h[0]));t.appendChild(el('span','',h[1]));c.appendChild(t);
+    h[2].forEach(function(p){c.appendChild(el('p','',p))});w.appendChild(c)});
+  app.appendChild(w);
+}
+function norm(t){return String(t||'').toLowerCase().replace(/ё/g,'е')}
+var SLAB={rec:['Запись','wrench'],part:['Запчасть','cog'],buy:['Покупка','cart'],doc:['Документ','doc'],tire:['Шины','tire'],media:['Галерея','image'],atv:['Техника','gauge']};
+function sText(x){
+  if(x.t==='rec')return [x.title,x.parts,x.notes];
+  if(x.t==='part')return [x.name,x.num,x.shop,x.notes];
+  if(x.t==='buy')return [x.name,x.notes];
+  if(x.t==='doc')return [x.kind,x.title,x.num,x.notes];
+  if(x.t==='tire')return [x.season,x.title,x.size,x.notes];
+  if(x.t==='media')return [x.title,x.notes];
+  if(x.t==='atv')return [x.name,x.kind,x.plate,x.vin];
+  return [];
+}
+function sTitle(x){return x.t==='rec'||x.t==='media'?x.title:x.t==='doc'?docName(x):x.t==='tire'?x.season+(x.title?' · '+x.title:''):x.name}
+function hl(node,text,q){
+  var n=norm(text),i=n.indexOf(q);if(!q||i<0){node.textContent=text;return}
+  node.appendChild(document.createTextNode(text.slice(0,i)));node.appendChild(el('mark','',text.slice(i,i+q.length)));node.appendChild(document.createTextNode(text.slice(i+q.length)));
+}
+function goTo(x){
+  S.y='';S.m='';S.sec=null;
+  if(x.t==='doc'){S.grp='docs';S.dsel=x.atv}
+  else if(x.t==='media'){S.grp='gal'}
+  else{var v=x.t==='atv'?x:by('atv').find(function(a){return a.id===x.atv});if(!v)return;var g=grpOf(v);S.grp=g;S['atv_'+g]=v.id;
+    S.sec={rec:'log',part:'parts',buy:'buy',tire:'tire'}[x.t]||null}
+  render();window.scrollTo(0,0);
+}
+function renderSearch(app){
+  app.appendChild(el('h2','','Поиск')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
+  var inp=document.createElement('input');inp.type='search';inp.placeholder='Свечи, масло, ОСАГО, артикул…';inp.value=S.q||'';inp.style.marginBottom='12px';inp.setAttribute('enterkeyhint','search');
+  app.appendChild(inp);var res=el('div');app.appendChild(res);
+  var tm;inp.oninput=function(){clearTimeout(tm);tm=setTimeout(function(){S.q=inp.value;draw()},150)};
+  setTimeout(function(){inp.focus()},50);
+  function draw(){
+    res.textContent='';var q=norm(S.q).trim();
+    if(q.length<2){res.appendChild(el('div','empty','Введите хотя бы 2 буквы. Ищем по записям, запчастям, покупкам, документам, шинам и галерее.'));return}
+    var atvs={};by('atv').forEach(function(a){atvs[a.id]=a});
+    var found=items.filter(function(x){return SLAB[x.t]&&sText(x).some(function(f){return norm(f).indexOf(q)>=0})})
+      .sort(function(x,y){return (y.date||y.added||y.until||'').localeCompare(x.date||x.added||x.until||'')});
+    if(!found.length){res.appendChild(el('div','empty','Ничего не нашлось.'));return}
+    res.appendChild(el('div','mut','Найдено: '+found.length+(found.length>60?' (показаны первые 60)':''))).style.margin='0 4px 8px';
+    found.slice(0,60).forEach(function(x){
+      var b=el('button','sres'),ti=el('span','ti');ti.appendChild(ico(SLAB[x.t][1]));b.appendChild(ti);
+      var t=el('span'),bt=el('b');hl(bt,sTitle(x)||'',q);t.appendChild(bt);
+      var v=x.t==='atv'?null:x.atv==='me'?{name:'Мои документы'}:atvs[x.atv];
+      var sub=[SLAB[x.t][0],v&&v.name,x.date?fdate(x.date):x.until?'до '+fdate(x.until):''].filter(Boolean).join(' · ');
+      var other=norm(sTitle(x)).indexOf(q)>=0?null:sText(x).slice(1).filter(function(f){return norm(f).indexOf(q)>=0})[0];
+      var sm=el('small');if(other){hl(sm,String(other).replace(/\n/g,', '),q);sm.insertBefore(document.createTextNode(sub+' · '),sm.firstChild)}else sm.textContent=sub;
+      t.appendChild(sm);b.appendChild(t);b.appendChild(ico('chev'));
+      b.onclick=function(){goTo(x)};res.appendChild(b);
+    });
+  }
+  draw();
+}
 function renderProfile(app){
   if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
+  if(S.sec==='help'){backBar(app,'Профиль','Инструкция');renderHelp(app);return}
   app.appendChild(el('h2','','Профиль')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
   usageBar(app);
   function row(icn,txt,go){var b=el('button','prow');b.appendChild(ico(icn));b.appendChild(el('span','',txt));b.appendChild(ico('chev'));b.onclick=go;app.appendChild(b)}
+  row('book','Как пользоваться приложением',function(){S.sec='help';render();window.scrollTo(0,0)});
   if(ME.owner)row('user','Участники и их записи',function(){S.sec='adm';render();window.scrollTo(0,0)});
   var dk=document.documentElement.getAttribute('data-theme')==='dark';
   row(dk?'sun':'moon',dk?'Включить белую тему':'Включить тёмно-синюю тему',function(){document.getElementById('themeBtn').click();render()});
@@ -1052,6 +1158,7 @@ function applyTheme(t){
 (function(){
   var t='light';try{t=localStorage.getItem('theme')==='dark'?'dark':'light'}catch(e){}
   applyTheme(t);
+  var sbn=document.getElementById('searchBtn');sbn.appendChild(ico('search'));sbn.onclick=function(){S.grp='search';S.sec=null;render();window.scrollTo(0,0)};
   document.getElementById('themeBtn').onclick=function(){
     t=t==='dark'?'light':'dark';try{localStorage.setItem('theme',t)}catch(e){}applyTheme(t);
   };
