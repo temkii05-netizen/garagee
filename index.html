@@ -109,7 +109,7 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
   <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">Владелец приложения видит, кто заходит и что вы добавляете: технику, записи, запчасти и фото.</div>
+    <div style="margin-top:8px">Владелец приложения видит, кто заходит и что вы добавляете: технику, записи, запчасти и фото. Документы видны только вам.</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
@@ -340,7 +340,7 @@ function backBar(app,label,title){
 }
 function renderNav(){
   var n=$('#bnav').firstChild;n.textContent='';
-  [['moto','moto','Мото'],['car','car','Авто'],['gal','image','Галерея'],['prof','user','Профиль']].forEach(function(t){
+  [['moto','moto','Мото'],['car','car','Авто'],['docs','doc','Документы'],['gal','image','Галерея'],['prof','user','Профиль']].forEach(function(t){
     var b=el('button',S.grp===t[0]?'on':'');b.appendChild(ico(t[1]));b.appendChild(el('span','',t[2]));
     b.onclick=function(){if(S.grp===t[0]&&!S.sec)return;S.grp=t[0];S.sec=null;render();window.scrollTo(0,0)};n.appendChild(b);
   });
@@ -363,6 +363,7 @@ function render(){
     filterBar(app);renderGal(app,ga);return;
   }
   if(S.grp==='prof'){renderProfile(app);return}
+  if(S.grp==='docs'){renderDocsHome(app);return}
   var g=S.grp,car=g==='car',list=by('atv').filter(function(x){return grpOf(x)===g}),a=curAtv();
   if(!a){
     var e=el('div','card');e.style.cssText='text-align:center;padding:28px 18px';
@@ -525,6 +526,39 @@ function renderTire(app,a){
     ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
   });
 }
+function docsSummary(id){
+  var l=by('doc').filter(function(d){return d.atv===id}),n=l.filter(function(d){return d.until}).sort(function(x,y){return daysLeft(x.until)-daysLeft(y.until)})[0];
+  var sub=l.length?plural(l.length,'документ','документа','документов'):'Пока пусто',cls='';
+  if(n){var dd=daysLeft(n.until);if(dd<=30){sub=n.kind+': '+(dd<0?'просрочен':'осталось '+dd+' дн.');cls=dd<0?'bad':'hl'}}
+  return {sub:sub,cls:cls};
+}
+function renderDocsHome(app){
+  if(S.dsel){
+    var a=S.dsel==='me'?{id:'me',name:'Мои документы'}:by('atv').find(function(x){return x.id===S.dsel});
+    if(!a){S.dsel=null;return renderDocsHome(app)}
+    var w=el('div','back'),b=el('button');b.appendChild(ico('back'));b.appendChild(document.createTextNode('Документы'));
+    b.onclick=function(){S.dsel=null;render();window.scrollTo(0,0)};w.appendChild(b);w.appendChild(el('h2','',a.name));app.appendChild(w);
+    renderDocs(app,a);return;
+  }
+  app.appendChild(el('h2','','Документы')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
+  function sec(title,icn,list){
+    var h=el('div','ttl');h.style.cssText='margin:16px 4px 8px;font-size:16px;font-weight:800';h.appendChild(ico(icn));h.appendChild(el('span','',title));app.appendChild(h);
+    var tl=el('div','tiles');
+    list.forEach(function(x){
+      var sm=docsSummary(x.id),bt=el('button','tile'+(sm.cls?' '+sm.cls:''));
+      var ti=el('span','ti');ti.appendChild(ico(x.icn||icn));bt.appendChild(ti);
+      var t=el('span');t.appendChild(el('b','',x.name));t.appendChild(el('small','',sm.sub));bt.appendChild(t);
+      bt.onclick=function(){S.dsel=x.id;render();window.scrollTo(0,0)};tl.appendChild(bt);
+    });
+    app.appendChild(tl);
+  }
+  sec('Личные','user',[{id:'me',name:'Мои документы',icn:'user'}]);
+  var cars=by('atv').filter(function(x){return grpOf(x)==='car'}),motos=by('atv').filter(function(x){return grpOf(x)==='moto'});
+  if(cars.length)sec('Машины','car',cars);
+  if(motos.length)sec('Мототехника','moto',motos);
+  if(!cars.length&&!motos.length)app.appendChild(el('div','mut','Добавьте технику во вкладке «Мото» или «Авто», и здесь появятся её документы.')).style.cssText='text-align:center;margin-top:12px';
+  var n=el('div','mut','🔒 Документы и фото видны только вам.');n.style.cssText='text-align:center;margin-top:14px';app.appendChild(n);
+}
 function renderProfile(app){
   if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
   app.appendChild(el('h2','','Профиль')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
@@ -546,10 +580,10 @@ function photoStrip(it,c){
   if(assets&&col){var b=el('button','g','📷 Фото');b.onclick=function(){addPhoto(it,b)};w.appendChild(b)}
   if(w.childNodes.length)c.appendChild(w);
 }
-function pickFile(accept,cb){
-  var f=document.createElement('input');f.type='file';f.accept=accept;
+function pickFile(accept,cb,multi){
+  var f=document.createElement('input');f.type='file';f.accept=accept;if(multi)f.multiple=true;
   f.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0';
-  f.onchange=function(){var file=f.files&&f.files[0];if(f.parentNode)f.parentNode.removeChild(f);if(file)cb(file)};
+  f.onchange=function(){var fs=[].slice.call(f.files||[]);if(f.parentNode)f.parentNode.removeChild(f);if(fs.length)cb(multi?fs:fs[0])};
   document.body.appendChild(f);f.click();
 }
 function isVid(f){return /^video\//.test(f.type)||/\.(mp4|mov|m4v|mkv|avi|webm|3gp|wmv|mpe?g)$/i.test(f.name||'')}
@@ -778,7 +812,11 @@ function renderGal(app,a){
 }
 
 /* ---------- документы ---------- */
-var DOCKINDS=['ПТС','Свидетельство о регистрации','Страховка','Техосмотр','Договор купли-продажи','Гарантия','Права / разрешение','Другое'],DOCURL={};
+var DOCK={
+  me:['Водительские права','Паспорт','Загранпаспорт','СНИЛС','ИНН','Полис ОМС','Медсправка','Другое'],
+  car:['ПТС','СТС','ОСАГО','КАСКО','Диагностическая карта','Договор купли-продажи','Гарантия','Сервисная книжка','Другое'],
+  moto:['ПТС / ПСМ','Свидетельство о регистрации','Страховка','Техосмотр','Договор купли-продажи','Гарантия','Права / удостоверение тракториста','Другое']},DOCURL={};
+function docCat(a){return a.id==='me'?'me':grpOf(a)}
 function daysLeft(u){if(!u)return null;var t=new Date();t.setHours(0,0,0,0);return Math.round((new Date(u+'T00:00:00')-t)/86400000)}
 function docState(d){var n=daysLeft(d.until);
   if(n===null)return {txt:'без срока',cls:'mut'};
@@ -798,22 +836,38 @@ function docsAlert(app,a){
   c.onclick=function(){S.sec='docs';render()};app.appendChild(c);
 }
 function docForm(a,d){
-  openForm(d?'Изменить документ':'Новый документ',[
-    ['kind','Тип документа','sel','','',DOCKINDS],
-    ['title','Название','text','','Например: ОСАГО Ингосстрах'],
+  var kinds=DOCK[docCat(a)].slice();if(d&&d.kind&&kinds.indexOf(d.kind)<0)kinds.unshift(d.kind);
+  var f=[
+    ['kind','Тип документа','sel','','',kinds],
+    ['title','Название','text','',a.id==='me'?'Например: категории B, A':'Например: ОСАГО Ингосстрах'],
     ['num','Номер / серия','text'],
     ['until','Действует до','date'],
-    ['notes','Заметки','area']
-  ],d,function(x){x.t='doc';x.atv=a.id;x.photos=(d&&d.photos)||[];x.added=(d&&d.added)||today();put(d?d.id:uid(),x)});
+    ['notes','Заметки','area']];
+  if(!d)f.push(['ph','Сразу добавить фото или скан','check']);
+  openForm(d?'Изменить документ':'Новый документ',f,d,function(x){
+    var ph=x.ph;delete x.ph;
+    x.t='doc';x.atv=a.id;x.photos=(d&&d.photos)||[];x.added=(d&&d.added)||today();
+    var id=d?d.id:uid();put(id,x);
+    if(ph)addDocPhoto(Object.assign({id:id},x),null);
+  });
+  var box=$('#mb');if(d&&d.kind)box.querySelector('select').value=d.kind;
+  var cb=box.querySelector('input[type=checkbox]');if(cb)cb.checked=true;
 }
 function addDocPhoto(it,btn){
-  pickFile('image/*',async function(file){
-    btn.textContent='Загрузка…';
-    try{var blob=await toJpeg(file),path=UID+'/'+uid()+'.jpg';
-      var r=await sb.storage.from('docs').upload(path,blob,{contentType:'image/jpeg'});if(r.error)throw r.error;
-      put(it.id,Object.assign({},it,{photos:(it.photos||[]).concat(path)}))}
-    catch(e){btn.textContent='📷 Скан / фото';alert(errMsg(e,'Не удалось загрузить скан'))}
-  });
+  pickFile('image/*',async function(files){
+    var st=$('#sync'),done=[];
+    try{
+      for(var i=0;i<files.length;i++){
+        var msg='Загрузка '+(i+1)+' из '+files.length+'…';if(btn)btn.textContent=msg;st.textContent=msg;
+        var blob=await toJpeg(files[i]),path=UID+'/'+uid()+'.jpg';
+        var r=await sb.storage.from('docs').upload(path,blob,{contentType:'image/jpeg'});if(r.error)throw r.error;
+        done.push(path);
+      }
+    }catch(e){alert(errMsg(e,'Не удалось загрузить скан'))}
+    if(btn)btn.textContent='📷 Фото / скан';
+    if(done.length){var cur=items.find(function(x){return x.id===it.id})||it;put(it.id,Object.assign({},cur,{photos:(cur.photos||[]).concat(done)}))}
+    else st.textContent='☁️ сохранено';
+  },true);
 }
 function showDocPhoto(it,p,url){
   var b=$('#mb');b.textContent='';var im=document.createElement('img');im.src=url;im.style.cssText='width:100%;border-radius:12px';b.appendChild(im);
@@ -836,7 +890,7 @@ function renderDocs(app,a){
   var ab=plusBtn('Добавить документ');ab.onclick=function(){docForm(a)};app.appendChild(ab);
   var l=by('doc').filter(function(d){return d.atv===a.id}).sort(function(x,y){
     var p=daysLeft(x.until),q=daysLeft(y.until);if(p===null&&q===null)return 0;if(p===null)return 1;if(q===null)return -1;return p-q});
-  if(!l.length){app.appendChild(el('div','empty','Здесь будут ПТС, страховка, техосмотр и другие документы. Сфотографируйте их, чтобы всегда были под рукой, и следите за сроками.'));return}
+  if(!l.length){app.appendChild(el('div','empty',a.id==='me'?'Добавьте права, паспорт и другие личные документы. Можно сразу сфотографировать обе стороны.':'Здесь будут ПТС, страховка, техосмотр и другие документы. Сфотографируйте их, чтобы всегда были под рукой, и следите за сроками.'));return}
   l.forEach(function(d){
     var c=el('div','card'),rw=el('div','row'),st=docState(d);
     rw.appendChild(el('b','',docName(d)));rw.appendChild(el('span',st.cls,st.txt));c.appendChild(rw);
@@ -844,7 +898,7 @@ function renderDocs(app,a){
     if(d.notes)c.appendChild(el('div','mut',d.notes));
     var w=el('div');w.style.marginTop='6px';
     (d.photos||[]).forEach(function(p){var im=document.createElement('img');im.className='thumb';im.dataset.p=p;im.onclick=function(){if(im.getAttribute('src'))showDocPhoto(d,p,im.src)};w.appendChild(im)});
-    var pb=el('button','g','📷 Скан / фото');pb.onclick=function(){addDocPhoto(d,pb)};w.appendChild(pb);c.appendChild(w);
+    var pb=el('button','g','📷 Фото / скан');pb.onclick=function(){addDocPhoto(d,pb)};w.appendChild(pb);c.appendChild(w);
     var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
     e1.onclick=function(){docForm(a,d)};d1.onclick=function(){if(confirm('Удалить документ и его сканы?'))del(d.id)};
     ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac);app.appendChild(c);
