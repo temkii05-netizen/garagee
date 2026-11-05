@@ -108,11 +108,15 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .sres>span:nth-child(2){min-width:0;flex:1}
 mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 .help h3{margin:0 0 6px;font-size:16px;font-weight:800;display:flex;gap:8px;align-items:center}.help p{margin:4px 0;font-size:14px;color:var(--tx)}
+.tgl{position:relative}
+.badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#EF4444;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--bg)}
+.news .nd{font-size:12px;color:var(--mut);font-weight:600}.news h3{margin:2px 0 6px;font-size:17px;font-weight:800}.news p{margin:0;white-space:pre-wrap;font-size:15px}
+.news .new{display:inline-block;background:#EF4444;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:800;margin-left:6px;vertical-align:middle}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hd"><h1>Гараж</h1><span class="mut" id="sync" style="flex:1"></span><button class="tgl" id="searchBtn" aria-label="Поиск"></button><button class="tgl" id="themeBtn" aria-label="Сменить тему"></button></div>
+  <div class="hd"><h1>Гараж</h1><span class="mut" id="sync" style="flex:1"></span><button class="tgl" id="bellBtn" aria-label="Новости приложения"></button><button class="tgl" id="searchBtn" aria-label="Поиск"></button><button class="tgl" id="themeBtn" aria-label="Сменить тему"></button></div>
   <div id="app"></div>
   <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
@@ -197,6 +201,7 @@ async function init(){
     $('#sync').textContent='☁️ сохранено';
     try{await getUsage()}catch(e){}
     r2usage();
+    loadNews();
     if(ME.owner)startAdmin();
     clearTimeout(wd);render();
   }catch(e){clearTimeout(wd);msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
@@ -364,6 +369,7 @@ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.
 moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
 search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
 book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
 pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'};
 function ico(n){var s=document.createElement('span');s.className='ic';s.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||'')+'</svg>';return s}
 function recIcon(r){return /масл/i.test(r.title)?'droplet':r.std?'badge':'wrench'}
@@ -402,6 +408,7 @@ function render(){
   if(S.grp==='prof'){renderProfile(app);return}
   if(S.grp==='docs'){renderDocsHome(app);return}
   if(S.grp==='search'){renderSearch(app);return}
+  if(S.grp==='news'){renderNews(app);return}
   var g=S.grp,car=g==='car',list=by('atv').filter(function(x){return grpOf(x)===g}),a=curAtv();
   if(!a){
     var e=el('div','card');e.style.cssText='text-align:center;padding:28px 18px';
@@ -687,6 +694,46 @@ function renderSearch(app){
     });
   }
   draw();
+}
+var NEWS=null;
+function newsSeen(){try{return localStorage.getItem('newsSeen')||''}catch(e){return ''}}
+function newsBadge(){
+  var b=document.getElementById('bellBtn');if(!b)return;var old=b.querySelector('.badge');if(old)old.remove();
+  var seen=newsSeen(),n=(NEWS||[]).filter(function(x){return x.created>seen}).length;
+  if(n)b.appendChild(el('span','badge',n>9?'9+':String(n)));
+}
+function loadNews(){
+  if(!sb)return;
+  sb.from('news').select('id,title,body,created').order('created',{ascending:false}).limit(30).then(function(r){
+    if(r.error)return;NEWS=r.data;newsBadge();if(S.grp==='news')render();
+  });
+}
+function newsForm(n){
+  openForm(n?'Изменить новость':'Новость для всех',[['title','Заголовок','text','','Например: Добавили поиск'],['body','Текст','area','','Что нового и как этим пользоваться']],n,function(d){
+    if(!d.title){alert('Нужен заголовок');return}
+    var q=n?sb.from('news').update({title:d.title,body:d.body||''}).eq('id',n.id):sb.from('news').insert({title:d.title,body:d.body||''});
+    q.then(function(r){if(r.error)alert('Не удалось сохранить: '+r.error.message);loadNews()});
+  });
+  var t=$('#mb textarea');if(t){t.maxLength=3000;t.style.minHeight='140px'}
+}
+function renderNews(app){
+  app.appendChild(el('h2','','Что нового')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
+  if(ME.owner){var ab=plusBtn('Написать новость');ab.onclick=function(){newsForm()};app.appendChild(ab)}
+  if(NEWS===null){app.appendChild(el('div','empty','Загрузка…'));loadNews();return}
+  if(!NEWS.length){app.appendChild(el('div','empty','Пока новостей нет. Здесь будут обновления приложения.'));return}
+  var seen=newsSeen(),w=el('div','news');
+  NEWS.forEach(function(n){
+    var c=el('div','card'),dt=new Date(n.created),d=el('div','nd',dt.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}));
+    if(n.created>seen)d.appendChild(el('span','new','новое'));
+    c.appendChild(d);c.appendChild(el('h3','',n.title));if(n.body)c.appendChild(el('p','',n.body));
+    if(ME.owner){var ac=el('div','acts'),e1=el('button','g','Изменить'),d1=el('button','g','Удалить');
+      e1.onclick=function(){newsForm(n)};d1.onclick=function(){if(!confirm('Удалить новость?'))return;sb.from('news').delete().eq('id',n.id).then(function(r){if(r.error)alert(r.error.message);loadNews()})};
+      ac.appendChild(e1);ac.appendChild(d1);c.appendChild(ac)}
+    w.appendChild(c);
+  });
+  app.appendChild(w);
+  try{localStorage.setItem('newsSeen',NEWS[0].created)}catch(e){}
+  newsBadge();
 }
 function renderProfile(app){
   if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
@@ -1158,6 +1205,7 @@ function applyTheme(t){
 (function(){
   var t='light';try{t=localStorage.getItem('theme')==='dark'?'dark':'light'}catch(e){}
   applyTheme(t);
+  var bbn=document.getElementById('bellBtn');bbn.appendChild(ico('bell'));bbn.onclick=function(){S.grp='news';S.sec=null;render();window.scrollTo(0,0)};
   var sbn=document.getElementById('searchBtn');sbn.appendChild(ico('search'));sbn.onclick=function(){S.grp='search';S.sec=null;render();window.scrollTo(0,0)};
   document.getElementById('themeBtn').onclick=function(){
     t=t==='dark'?'light':'dark';try{localStorage.setItem('theme',t)}catch(e){}applyTheme(t);
