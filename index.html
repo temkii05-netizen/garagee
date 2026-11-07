@@ -127,7 +127,8 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
   <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px"> by laker.</div>
+    <div style="margin-top:8px">by laker.</div>
+    <button id="policyBtn" style="margin-top:10px;background:none;border:0;padding:6px;color:var(--mut);font-size:13px;font-weight:600;text-decoration:underline">Политика конфиденциальности</button>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
@@ -424,6 +425,7 @@ function render(){
   if(S.grp==='docs'){renderDocsHome(app);return}
   if(S.grp==='search'){renderSearch(app);return}
   if(S.grp==='news'){renderNews(app);return}
+  if(S.grp==='policy'){renderPolicy(app);return}
   var g=S.grp,car=g==='car',list=by('atv').filter(function(x){return grpOf(x)===g}),a=curAtv();
   if(!a){
     var e=el('div','card');e.style.cssText='text-align:center;padding:28px 18px';
@@ -652,7 +654,7 @@ var HELP=[
  ['image','6. Галерея',['Видео до 50 МБ и фото покатушек. Видео больше 20 МБ смотрите кнопкой «Отправить в чат с ботом».']],
  ['search','7. Поиск',['Значок лупы вверху: ищет по записям, запчастям, покупкам, документам, шинам и галерее. Нажмите на результат — откроется нужный раздел.']],
  ['user','8. Профиль',['Тема (белая или тёмно-синяя), занятое место, список всей техники и эта инструкция.']],
- ['shield','Лимиты и приватность',['100 МБ на фото чеков и запчастей, 10 ГБ на галерею, видео до 50 МБ.','.','Если что-то не грузится или «сессия истекла» — закройте приложение и откройте заново.']]];
+ ['shield','Лимиты и приватность',['100 МБ на фото чеков и запчастей, 10 ГБ на галерею, видео до 50 МБ.','','Если что-то не грузится или «сессия истекла» — закройте приложение и откройте заново.']]];
 function renderHelp(app){
   var w=el('div','help');
   HELP.forEach(function(h){var c=el('div','card'),t=el('h3');t.appendChild(ico(h[0]));t.appendChild(el('span','',h[1]));c.appendChild(t);
@@ -847,6 +849,27 @@ function renderPromos(app){
     dl.onclick=function(){if(!confirm('Удалить промокод '+p.code+'? Уже выданные подписки останутся.'))return;sb.from('promo_codes').delete().eq('code',p.code).then(function(r){if(r.error)alert(r.error.message);loadPromos()})};
     ac.appendChild(cp);ac.appendChild(tg);ac.appendChild(dl);c.appendChild(ac);app.appendChild(c);
   });
+}
+// --- Политика конфиденциальности. Контакт владельца можно поменять здесь ---
+var POLICY={owner:'laker',contact:'@lakeer1',date:'7 ноября 2026'};
+function renderPolicy(app){
+  var w=el('div','back'),b=el('button');b.appendChild(ico('back'));b.appendChild(document.createTextNode('Назад'));
+  b.onclick=function(){S.grp=S.prevGrp||'moto';render();window.scrollTo(0,0)};w.appendChild(b);w.appendChild(el('h2','','Конфиденциальность'));app.appendChild(w);
+  var P=[
+   ['Политика конфиденциальности','Приложение «Гараж» (бот и мини-приложение в Telegram) разработано и поддерживается '+POLICY.owner+' (далее — владелец). Документ объясняет, какие данные собираются, зачем и кто имеет к ним доступ. Действует с '+POLICY.date+'.'],
+   ['1. Какие данные мы получаем','• Из Telegram при входе: ваш Telegram ID, имя, ник (если есть).\n•\n• Служебное: время входов и их количество, занятое место, тариф и активированные промокоды.\n• На вашем устройстве хранятся только настройки: тема оформления и прочитанные новости.'],
+   ['2. Зачем','Чтобы приложение работало: сохраняло вашу историю обслуживания, считало сроки ТО и документов, хранило фото и видео, применяло лимиты тарифа. Также — для поддержки пользователей и улучшения приложения. Данные не продаются и не используются для рекламы.'],
+   ['3. Кто видит ваши данные','• Документы и их фото — только вы.\n• Технику, записи, запчасти, покупки, шины, фото и видео галереи, время входов видит владелец приложения как администратор — для поддержки и работы сервиса.\n• Другие пользователи ваши данные не видят.'],
+   ['4. Где хранятся данные','• База данных, фото чеков и документов — облачный сервис Supabase. Серверы находятся за пределами России.\n• Видео и фото галереи — в закрытом канале Telegram, доступ к которому есть только у бота.\n• Передача данных защищена шифрованием (HTTPS).'],
+   ['5. Сколько хранятся','Пока вы пользуетесь приложением. Удалённые вами записи и файлы удаляются сразу. По запросу удаляем аккаунт и все данные целиком.'],
+   ['6. Ваши права','Вы можете в любой момент удалить свои записи в приложении, запросить копию своих данных или полное удаление аккаунта. Для этого напишите владельцу в Telegram: '+POLICY.contact+'.'],
+   ['7. Согласие','Пользуясь приложением, вы соглашаетесь на обработку данных на условиях этой политики. Если вы не согласны — не используйте приложение и напишите владельцу для удаления данных.'],
+   ['8. Изменения','Политика может обновляться. О существенных изменениях сообщим в разделе новостей (колокольчик вверху).'],
+   ['Контакты','По любым вопросам о данных: '+POLICY.contact+' в Telegram.']];
+  var h=el('div','help');
+  P.forEach(function(x,i){var c=el('div','card'),t=el('h3','',x[0]);if(i===0)t.style.fontSize='19px';c.appendChild(t);
+    x[1].split('\n').forEach(function(line){c.appendChild(el('p','',line))});h.appendChild(c)});
+  app.appendChild(h);
 }
 function renderProfile(app){
   if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
@@ -1324,6 +1347,7 @@ function applyTheme(t){
   var t='light';try{t=localStorage.getItem('theme')==='dark'?'dark':'light'}catch(e){}
   applyTheme(t);
   var bbn=document.getElementById('bellBtn');bbn.appendChild(ico('bell'));bbn.onclick=function(){S.grp='news';S.sec=null;render();window.scrollTo(0,0)};
+  document.getElementById('policyBtn').onclick=function(){S.prevGrp=S.grp;S.grp='policy';S.sec=null;render();window.scrollTo(0,0)};
   var sbn=document.getElementById('searchBtn');sbn.appendChild(ico('search'));sbn.onclick=function(){S.grp='search';S.sec=null;render();window.scrollTo(0,0)};
   document.getElementById('themeBtn').onclick=function(){
     t=t==='dark'?'light':'dark';try{localStorage.setItem('theme',t)}catch(e){}applyTheme(t);
