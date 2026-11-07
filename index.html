@@ -112,6 +112,12 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 .badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#EF4444;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--bg)}
 .news .nd{font-size:12px;color:var(--mut);font-weight:600}.news h3{margin:2px 0 6px;font-size:17px;font-weight:800}.news p{margin:0;white-space:pre-wrap;font-size:15px}
 .news .new{display:inline-block;background:#EF4444;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:800;margin-left:6px;vertical-align:middle}
+.plan{position:relative}.plan.cur{box-shadow:inset 0 0 0 2px var(--ac),var(--sh)}
+.plan .pt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.plan .pt b{font-size:19px;font-weight:800}.plan .pr{font-weight:800;color:var(--ac)}
+.plan ul{margin:10px 0 0;padding:0;list-style:none}.plan li{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0}.plan li .ic{width:18px;height:18px;color:var(--ok)}
+.tag{display:inline-block;background:var(--ac);color:var(--acx);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800}
+.meter{margin-top:10px}.meter .row{font-size:13px}.meter i{display:block;height:7px;border-radius:4px;background:var(--bd);overflow:hidden;margin-top:4px}.meter i em{display:block;height:100%;background:var(--ac)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;font-weight:800;letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -121,7 +127,7 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
   <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">by laker.</div>
+    <div style="margin-top:8px"> by laker.</div>
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
@@ -201,7 +207,7 @@ async function init(){
     $('#sync').textContent='☁️ сохранено';
     try{await getUsage()}catch(e){}
     r2usage();
-    loadNews();
+    loadNews();loadPlan();
     if(ME.owner)startAdmin();
     clearTimeout(wd);render();
   }catch(e){clearTimeout(wd);msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
@@ -258,6 +264,10 @@ var KIND_HINT={
   'Эндуро':{name:'Например: KTM 300, Husqvarna TE 250',interval:'Например: 30',unit:'м/ч'},
   'Машина':{name:'Например: Toyota Camry, Toyota RAV4',interval:'Например: 10000',unit:'км'}};
 function atvForm(a,preset){
+  if(!a&&PLAN&&by('atv').length>=PLAN.max_atv){
+    if(confirm('На тарифе «'+PLAN.name+'» можно добавить технику: '+PLAN.max_atv+'. Открыть тарифы и ввести промокод?')){S.grp='prof';S.sec='plans';render();window.scrollTo(0,0)}
+    return;
+  }
   var k0=(a&&a.kind)||preset||'Квадроцикл',h0=KIND_HINT[k0]||KIND_HINT['Квадроцикл'];
   openForm(a?'Изменить технику':'Новая техника',[
     ['kind','Тип','sel','','',['Квадроцикл','Питбайк','Эндуро','Машина']],
@@ -283,6 +293,7 @@ function atvForm(a,preset){
   };
 }
 function recForm(r,pre){
+  if(!r&&!canAddNote())return;
   var a=curAtv();
   openForm(r?'Изменить запись':'Новая запись обслуживания',[
     ['title','Что делал','text','','Замена масла, ремонт ступицы…'],
@@ -326,6 +337,7 @@ function datePicks(a,editing){
   sync();
 }
 function partForm(p){
+  if(!p&&!canAddNote())return;
   var a=curAtv();
   openForm(p?'Изменить запчасть':'Новая запчасть',[
     ['name','Название','text','','Свечи, тормозные колодки…'],
@@ -370,6 +382,9 @@ moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
 search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
 book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
 bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+check:'<path d="M20 6 9 17l-5-5"/>',
+ticket:'<path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M13 5v2M13 11v2M13 17v2"/>',
+crown:'<path d="m2 8 4 10h12l4-10-6 4-4-7-4 7z"/>',
 pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'};
 function ico(n){var s=document.createElement('span');s.className='ic';s.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||'')+'</svg>';return s}
 function recIcon(r){return /масл/i.test(r.title)?'droplet':r.std?'badge':'wrench'}
@@ -566,6 +581,7 @@ function renderExp(app,a,recs){
   app.appendChild(el('div','mut','Считаются суммы из записей обслуживания.')).style.textAlign='center';
 }
 function tireForm(a,t){
+  if(!t&&!canAddNote())return;
   openForm(t?'Изменить комплект':'Новый комплект шин',[
     ['season','Сезон','sel','','',['Зима','Лето','Всесезон']],
     ['title','Марка и модель','text','','Например: Nokian Hakkapeliitta 10'],
@@ -636,7 +652,7 @@ var HELP=[
  ['image','6. Галерея',['Видео до 50 МБ и фото покатушек. Видео больше 20 МБ смотрите кнопкой «Отправить в чат с ботом».']],
  ['search','7. Поиск',['Значок лупы вверху: ищет по записям, запчастям, покупкам, документам, шинам и галерее. Нажмите на результат — откроется нужный раздел.']],
  ['user','8. Профиль',['Тема (белая или тёмно-синяя), занятое место, список всей техники и эта инструкция.']],
- ['shield','Лимиты и приватность',['100 МБ на фото чеков и запчастей, 10 ГБ на галерею, видео до 50 МБ.',' Документы — только вы.','Если что-то не грузится или «сессия истекла» — закройте приложение и откройте заново.']]];
+ ['shield','Лимиты и приватность',['100 МБ на фото чеков и запчастей, 10 ГБ на галерею, видео до 50 МБ.','.','Если что-то не грузится или «сессия истекла» — закройте приложение и откройте заново.']]];
 function renderHelp(app){
   var w=el('div','help');
   HELP.forEach(function(h){var c=el('div','card'),t=el('h3');t.appendChild(ico(h[0]));t.appendChild(el('span','',h[1]));c.appendChild(t);
@@ -735,13 +751,113 @@ function renderNews(app){
   try{localStorage.setItem('newsSeen',NEWS[0].created)}catch(e){}
   newsBadge();
 }
+var PLAN=null,PLANS=null;
+function notesCount(){return items.filter(function(x){return x.t==='rec'||x.t==='part'||x.t==='buy'||x.t==='tire'||x.t==='doc'}).length}
+function canAddNote(){
+  if(!(PLAN&&PLAN.max_rec)||notesCount()<PLAN.max_rec)return true;
+  if(confirm('На тарифе «'+PLAN.name+'» можно сделать записей: '+PLAN.max_rec+' (обслуживание, запчасти, покупки, документы). Открыть тарифы и ввести промокод?')){S.grp='prof';S.sec='plans';S.dsel=null;render();window.scrollTo(0,0)}
+  return false;
+}
+function loadPlan(){if(!sb)return Promise.resolve();return sb.rpc('my_plan').then(function(r){if(!r.error&&r.data){PLAN=r.data;if(S.grp==='prof')render()}})}
+function meter(box,label,used,total,fmt){
+  var m=el('div','meter'),r=el('div','row');r.appendChild(el('span','',label));r.appendChild(el('span','mut',fmt(used)+' из '+fmt(total)));m.appendChild(r);
+  var i=el('i'),e=el('em');e.style.width=Math.min(100,total?Math.round(used/total*100):0)+'%';if(total&&used/total>.9)e.style.background='var(--bad)';i.appendChild(e);m.appendChild(i);box.appendChild(m);
+}
+function planCard(app){
+  var c=el('div','card plan'),t=el('div','pt');
+  var lt=el('div');lt.appendChild(el('div','mut','Ваш тариф'));lt.appendChild(el('b','',PLAN?PLAN.name:'…'));t.appendChild(lt);
+  if(PLAN&&PLAN.admin)t.appendChild(el('span','tag','Владелец'));else if(PLAN&&PLAN.until)t.appendChild(el('span','mut','до '+new Date(PLAN.until).toLocaleDateString('ru-RU')));
+  c.appendChild(t);
+  if(PLAN){
+    meter(c,'Техника',by('atv').length,PLAN.max_atv,function(n){return String(n)});
+    if(PLAN.max_rec)meter(c,'Записи (обслуживание, запчасти, покупки, документы)',notesCount(),PLAN.max_rec,function(n){return String(n)});
+    meter(c,'Фото чеков и запчастей',USAGE.used||0,PLAN.photo_bytes,gb);
+    meter(c,'Видео в галерее',R2U.used||0,PLAN.video_bytes,gb);
+  }
+  var b=plusBtn('Тарифы и промокод');b.firstChild.replaceWith(ico('crown'));b.style.margin='14px 0 0';b.onclick=function(){S.sec='plans';render();window.scrollTo(0,0)};c.appendChild(b);
+  app.appendChild(c);
+}
+function renderPlans(app){
+  if(!PLANS){app.appendChild(el('div','empty','Загрузка…'));
+    sb.from('plans').select('*').order('sort').then(function(r){PLANS=r.error?[]:r.data;if(S.sec==='plans')render()});return}
+  PLANS.forEach(function(p){
+    var cur=PLAN&&PLAN.id===p.id,c=el('div','card plan'+(cur?' cur':'')),t=el('div','pt');
+    t.appendChild(el('b','',p.name));t.appendChild(cur?el('span','tag','Ваш тариф'):el('span','pr',p.price_rub?p.price_rub+' ₽/мес':p.id==='free'?'0 ₽':'цена скоро'));c.appendChild(t);
+    var ul=el('ul');
+    [ (p.max_atv===1?'1 единица техники':'До '+p.max_atv+' единиц техники'),(p.max_rec?'До '+p.max_rec+' записей всего: обслуживание, запчасти, покупки, документы':'Записи, запчасти, покупки, документы — без лимита'),'Фото чеков и запчастей: '+gb(p.photo_bytes),'Видео в галерее: '+gb(p.video_bytes),'Один ролик: до '+(p.video_file>=1e9?Math.round(p.video_file/1e9)+' ГБ':Math.round(p.video_file/1e6)+' МБ')+(p.video_file>5e7?' (после переезда на свой сервер)':'')]
+      .concat(p.perks||[]).forEach(function(x){var li=el('li');li.appendChild(ico('check'));li.appendChild(el('span','',x));ul.appendChild(li)});
+    c.appendChild(ul);
+    if(!cur&&p.id!=='free'){var bt=el('button','g','Оплата появится скоро');bt.disabled=true;bt.style.cssText='width:100%;margin-top:12px;opacity:.7';c.appendChild(bt)}
+    app.appendChild(c);
+  });
+  var pc=el('div','card');pc.appendChild(el('b','','Есть промокод?'));
+  var w=el('div');w.style.cssText='display:flex;gap:8px;margin-top:10px';
+  var inp=document.createElement('input');inp.placeholder='Например: GARAGE-7KQ2';inp.maxLength=32;inp.style.textTransform='uppercase';inp.autocapitalize='characters';
+  var go=el('button','','Активировать');go.style.whiteSpace='nowrap';
+  var res=el('div','mut');res.style.marginTop='8px';
+  go.onclick=function(){
+    var code=inp.value.trim().toUpperCase();if(!code){inp.focus();return}
+    go.disabled=true;go.textContent='…';
+    sb.rpc('redeem_promo',{p_code:code}).then(function(r){
+      go.disabled=false;go.textContent='Активировать';
+      var d=r.data||{};
+      if(r.error||!d.ok){res.style.color='var(--bad)';res.textContent=(d.error)||(r.error&&r.error.message)||'Не удалось активировать';return}
+      res.style.color='var(--ok)';
+      loadPlan().then(function(){getUsage().then(function(){r2usage().then(function(){
+        alert('Готово! Тариф «'+(PLAN?PLAN.name:d.plan)+'» до '+new Date(d.until).toLocaleDateString('ru-RU')+'.');render()})})});
+    });
+  };
+  w.appendChild(inp);w.appendChild(go);pc.appendChild(w);pc.appendChild(res);app.appendChild(pc);
+}
+function genCode(){var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';var r=new Uint32Array(8);crypto.getRandomValues(r);for(var i=0;i<8;i++){s+=a[r[i]%a.length];if(i===3)s+='-'}return 'GARAGE-'+s}
+var PROMOS=null;
+function loadPromos(){return sb.from('promo_codes').select('*').order('created',{ascending:false}).then(function(r){PROMOS=r.error?[]:r.data;if(S.sec==='promo')render()})}
+function renderPromos(app){
+  if(!PLANS){sb.from('plans').select('*').order('sort').then(function(r){PLANS=r.error?[]:r.data;render()})}
+  var f=el('div','card');f.appendChild(el('b','','Новый промокод'));
+  function fld(lab,node){f.appendChild(el('label','',lab));f.appendChild(node);return node}
+  var cw=el('div');cw.style.cssText='display:flex;gap:8px';var ci=document.createElement('input');ci.value=genCode();ci.maxLength=32;ci.style.textTransform='uppercase';
+  var rg=el('button','g','↻');rg.setAttribute('aria-label','Сгенерировать');rg.onclick=function(){ci.value=genCode()};cw.appendChild(ci);cw.appendChild(rg);fld('Код',cw);
+  var ps=fld('Тариф',document.createElement('select'));((PLANS||[]).filter(function(p){return p.id!=='free'})).forEach(function(p){var o=el('option','',p.name);o.value=p.id;ps.appendChild(o)});
+  if(!ps.options.length){[['standard','Стандарт'],['max','Максимум']].forEach(function(x){var o=el('option','',x[1]);o.value=x[0];ps.appendChild(o)})}
+  var di=fld('Сколько дней даёт',document.createElement('input'));di.type='number';di.value=30;di.min=1;
+  var ui=fld('Сколько человек может активировать',document.createElement('input'));ui.type='number';ui.value=1;ui.min=1;
+  var ei=fld('Действует до (необязательно)',document.createElement('input'));ei.type='date';
+  var ni=fld('Заметка для себя',document.createElement('input'));ni.placeholder='Например: для Вани';ni.maxLength=100;
+  var cb=el('button','add','Создать промокод');cb.style.marginTop='14px';
+  cb.onclick=function(){
+    var code=ci.value.trim().toUpperCase();
+    if(!/^[A-Z0-9_-]{3,32}$/.test(code)){alert('Код: 3–32 символа, латинские буквы, цифры, - и _');return}
+    var row={code:code,plan:ps.value,days:Math.max(1,Number(di.value)||30),max_uses:Math.max(1,Number(ui.value)||1),note:ni.value.trim()||null,expires:ei.value?ei.value+'T23:59:59+03:00':null};
+    sb.from('promo_codes').insert(row).then(function(r){if(r.error){alert(r.error.message.indexOf('duplicate')>=0?'Такой код уже есть':'Не удалось: '+r.error.message);return}loadPromos()});
+  };
+  f.appendChild(cb);app.appendChild(f);
+  if(PROMOS===null){app.appendChild(el('div','empty','Загрузка…'));loadPromos();return}
+  if(!PROMOS.length){app.appendChild(el('div','empty','Промокодов пока нет.'));return}
+  var pn={};(PLANS||[]).forEach(function(p){pn[p.id]=p.name});
+  PROMOS.forEach(function(p){
+    var c=el('div','card'),t=el('div','row');t.appendChild(el('span','code',p.code));
+    var expired=p.expires&&new Date(p.expires)<new Date(),st=!p.active?'отключён':expired?'истёк':p.used>=p.max_uses?'использован':'активен';
+    t.appendChild(el('span',st==='активен'?'ok':'mut',st));c.appendChild(t);
+    c.appendChild(el('div','mut',(pn[p.plan]||p.plan)+' · '+plural(p.days,'день','дня','дней')+' · активаций '+p.used+' из '+p.max_uses+(p.expires?' · до '+new Date(p.expires).toLocaleDateString('ru-RU'):'')));
+    if(p.note)c.appendChild(el('div','mut',p.note));
+    var ac=el('div','acts'),cp=el('button','g','Копировать'),tg=el('button','g',p.active?'Отключить':'Включить'),dl=el('button','g','Удалить');
+    cp.onclick=function(){var done=function(){cp.textContent='Скопировано'};try{navigator.clipboard.writeText(p.code).then(done,function(){prompt('Скопируйте код',p.code)})}catch(e){prompt('Скопируйте код',p.code)}};
+    tg.onclick=function(){sb.from('promo_codes').update({active:!p.active}).eq('code',p.code).then(function(r){if(r.error)alert(r.error.message);loadPromos()})};
+    dl.onclick=function(){if(!confirm('Удалить промокод '+p.code+'? Уже выданные подписки останутся.'))return;sb.from('promo_codes').delete().eq('code',p.code).then(function(r){if(r.error)alert(r.error.message);loadPromos()})};
+    ac.appendChild(cp);ac.appendChild(tg);ac.appendChild(dl);c.appendChild(ac);app.appendChild(c);
+  });
+}
 function renderProfile(app){
   if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
   if(S.sec==='help'){backBar(app,'Профиль','Инструкция');renderHelp(app);return}
+  if(S.sec==='plans'){backBar(app,'Профиль','Тарифы');renderPlans(app);return}
+  if(S.sec==='promo'&&ME.owner){backBar(app,'Профиль','Промокоды');renderPromos(app);return}
   app.appendChild(el('h2','','Профиль')).style.cssText='margin:0 0 12px;font-size:22px;font-weight:800';
-  usageBar(app);
+  planCard(app);
   function row(icn,txt,go){var b=el('button','prow');b.appendChild(ico(icn));b.appendChild(el('span','',txt));b.appendChild(ico('chev'));b.onclick=go;app.appendChild(b)}
   row('book','Как пользоваться приложением',function(){S.sec='help';render();window.scrollTo(0,0)});
+  if(ME.owner)row('ticket','Промокоды',function(){S.sec='promo';render();window.scrollTo(0,0)});
   if(ME.owner)row('user','Участники и их записи',function(){S.sec='adm';render();window.scrollTo(0,0)});
   var dk=document.documentElement.getAttribute('data-theme')==='dark';
   row(dk?'sun':'moon',dk?'Включить белую тему':'Включить тёмно-синюю тему',function(){document.getElementById('themeBtn').click();render()});
@@ -795,6 +911,7 @@ function showPhoto(it,id){
 
 /* ---------- список покупок ---------- */
 function buyForm(a,b){
+  if(!b&&!canAddNote())return;
   openForm(b?'Изменить':'Что купить',[
     ['name','Название','text','','Масляный фильтр'],
     ['qty','Количество','number',1],
@@ -908,7 +1025,7 @@ function addMedia(a){
     var vid=isVid(file);
     if(!vid&&!isImg(file)){alert('Формат файла не поддерживается. Выберите видео (MP4, MOV) или фото (JPG, PNG, WebP).');return}
     if(vid&&!/\.(mp4|mov|m4v)$/i.test(file.name||'')&&!confirm('Лучше всего работают видео в формате MP4. Другие форматы могут не воспроизводиться в приложении. Загрузить всё равно?'))return;
-    if(vid&&file.size>TG_VIDEO_MAX){alert('Видео '+Math.round(file.size/1048576)+' МБ: через Telegram можно загружать ролики до 50 МБ. Сожмите или обрежьте видео.');return}
+    var vmax=Math.min(TG_VIDEO_MAX,(PLAN&&PLAN.video_file)||TG_VIDEO_MAX);if(vid&&file.size>vmax){alert('Видео '+Math.round(file.size/1048576)+' МБ: сейчас можно загружать ролики до '+Math.round(vmax/1e6)+' МБ. Сожмите или обрежьте видео.');return}
     openForm('Новое в галерее',[['title','Название','text','','Покатушки в лесу'],['date','Дата','date',today()],['notes','Заметки','area']],null,function(d){doUpload(a,file,vid,d)});
   });
 }
@@ -1014,6 +1131,7 @@ function docsAlert(app,a){
   c.onclick=function(){S.sec='docs';render()};app.appendChild(c);
 }
 function docForm(a,d){
+  if(!d&&!canAddNote())return;
   var kinds=DOCK[docCat(a)].slice();if(d&&d.kind&&kinds.indexOf(d.kind)<0)kinds.unshift(d.kind);
   var f=[
     ['kind','Тип документа','sel','','',kinds],
