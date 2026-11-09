@@ -932,7 +932,28 @@ function renderProfile(app){
   var all=by('atv');
   if(all.length){var c=el('div','card');c.appendChild(el('b','','Вся техника'));
     all.forEach(function(x){var r=el('div','row');r.style.marginTop='8px';r.appendChild(el('span','',icon(x)+' '+x.name));
-      var e=el('button','g','Изменить');e.onclick=function(){atvForm(x)};r.appendChild(e);c.appendChild(r)});app.appendChild(c)}
+      var bx=el('div','acts');bx.style.cssText='margin:0;flex:0 0 auto';
+      var e=el('button','g','Изменить');e.onclick=function(){atvForm(x)};
+      var dx=el('button','g','Удалить');dx.style.color='var(--bad)';dx.onclick=function(){delAtv(x)};
+      bx.appendChild(e);bx.appendChild(dx);r.appendChild(bx);c.appendChild(r)});app.appendChild(c)}
+}
+async function delAtv(a){
+  var rel=items.filter(function(x){return x.atv===a.id&&x.t!=='atv'});
+  var n=function(t){return rel.filter(function(x){return x.t===t}).length};
+  var parts=[['rec','записей обслуживания'],['part','запчастей'],['buy','покупок'],['tire','комплектов шин'],['doc','документов'],['media','фото и видео в галерее']]
+    .filter(function(q){return n(q[0])}).map(function(q){return '• '+q[1]+': '+n(q[0])});
+  if(!confirm('Удалить «'+a.name+'»?'+(parts.length?'\n\nВместе с ней удалится:\n'+parts.join('\n'):'')))return;
+  if(!confirm('Точно удалить «'+a.name+'»?\n\nЭто нельзя отменить — данные и файлы удалятся навсегда.'))return;
+  $('#sync').textContent='удаление…';
+  for(var i=0;i<rel.length;i++){var x=rel[i];
+    try{if(x.t==='media'&&x.store==='tg')await mcall('del',{key:x.file});
+      else if(x.t==='media'&&x.file&&assets)assets.delete(x.file).catch(function(){});
+      if(x.thumb)rmf(x.thumb).catch(function(){})}catch(e){}
+    del(x.id)}
+  if(a.photo)rmf(a.photo).catch(function(){});
+  del(a.id);
+  ['moto','car'].forEach(function(g){if(S['atv_'+g]===a.id)S['atv_'+g]=null});
+  r2usage().then(render);$('#sync').textContent='☁️ сохранено';
 }
 /* ---------- photos ---------- */
 function photoStrip(it,c){
