@@ -1,0 +1,24 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Оплата тарифа — Гараж</title><style>
+:root{--bg:#f4f6fa;--card:#fff;--tx:#14213d;--mut:#5b6478;--ac:#2563eb;--bd:#e3e8f0}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1630;--card:#13223f;--tx:#e8eefb;--mut:#9fb0cf;--ac:#7aa7ff;--bd:#22345a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:8px}header b{font-size:20px}
+nav{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 20px;font-size:14px}
+a{color:var(--ac)}h1{font-size:26px;line-height:1.25;margin:8px 0 4px}.date{color:var(--mut);font-size:14px;margin:0 0 20px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px 18px;margin:12px 0}
+h2{font-size:18px;margin:0 0 8px}p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}.tw{overflow-x:auto;margin:0 -6px}th,td{padding:9px 5px;border-bottom:1px solid var(--bd);text-align:center}th:first-child,td:first-child{text-align:left;color:var(--mut)}
+.btn{display:inline-block;background:var(--ac);color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:10px 14px;font-size:14px;white-space:nowrap;border:0;cursor:pointer}.btn.big{display:block;width:100%;text-align:center;font-size:17px;padding:14px;margin-top:14px}.note{background:var(--bg);border:1px dashed var(--bd);border-radius:12px;padding:12px;margin-top:12px;display:none}.price{font-size:19px;font-weight:800;white-space:nowrap}@media (max-width:420px){table{font-size:13px}th,td{padding:8px 3px}}footer{color:var(--mut);font-size:14px;margin-top:24px;text-align:center}
+</style></head><body><main>
+<header><span style="font-size:26px">🏍</span><b>Гараж</b></header><nav><a href="/pricing.html">Тарифы и цены</a><a href="/terms.html">Пользовательское соглашение</a><a href="/privacy.html">Политика конфиденциальности</a></nav>
+<h1>Оформление оплаты</h1>
+<section><h2 id="pn">Тариф</h2><p id="pf" style="color:var(--mut)"></p><table><tr><td>Срок</td><td style="text-align:right">30 дней, без автосписаний</td></tr><tr><td>Способ оплаты</td><td style="text-align:right">СБП (QR-код или ссылка из приложения банка)</td></tr><tr><td>К оплате</td><td style="text-align:right" class="price" id="pp"></td></tr></table><button class="btn big" id="pb">Оплатить</button><div class="note" id="pnote"><b>Оплата проходит в приложении «Гараж» в Telegram</b> — так тариф сразу привяжется к вашему аккаунту.<br>Откройте бота «Гараж» → кнопка «Открыть Гараж» → <b>Профиль → Тарифы</b> → «Оплатить». Откроется страница оплаты через СБП. Вопросы: <a href="https://t.me/darklemm1">@darklemm1</a> в Telegram.</div><p style="font-size:13px;color:var(--mut);margin-top:12px">Нажимая «Оплатить», вы принимаете <a href="/terms.html">Пользовательское соглашение</a> и <a href="/privacy.html">Политику конфиденциальности</a>. Тариф привязывается к вашему аккаунту Telegram и включается сразу после оплаты.</p></section><section><h2>Поддержка</h2><p>Вопросы по оплате и тарифам: <a href="https://t.me/darklemm1">@darklemm1</a> в Telegram. Обычно отвечаем в течение 24 часов.</p></section><script>
+var P={standard:{n:'Стандарт',p:190,f:'до 3 единиц техники, записи без лимита, 500 МБ фото, 10 ГБ видео'},max:{n:'Макс',p:299,f:'до 10 единиц техники, записи без лимита, 2 ГБ фото, 50 ГБ видео, приоритетная поддержка'}};
+var k=new URLSearchParams(location.search).get('plan');var x=P[k]||P.standard;
+document.getElementById('pn').textContent='Тариф «'+x.n+'»';document.getElementById('pf').textContent=x.f;
+document.getElementById('pp').textContent=x.p+' ₽';document.getElementById('pb').textContent='Оплатить '+x.p+' ₽ через СБП';
+document.getElementById('pb').onclick=function(){document.getElementById('pnote').style.display='block'};
+</script>
+<footer>Поддержка: <a href="https://t.me/darklemm1">@darklemm1</a> в Telegram · <a href="https://garageebot.ru">garageebot.ru</a></footer></main></body></html>

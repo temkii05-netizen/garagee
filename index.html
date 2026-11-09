@@ -127,7 +127,7 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
   <nav class="bnav" id="bnav" aria-label="Разделы"><div></div></nav>
   <div class="mut" style="text-align:center;margin:24px 0 8px;font-size:13px">
     
-    <div style="margin-top:8px">by laker.</div>
+    <div style="margin-top:8px">by laker. · Поддержка: <a href="https://t.me/darklemm1" style="color:inherit">@darklemm1</a></div>
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:0 6px"><button id="policyBtn" style="background:none;border:0;padding:6px;color:var(--mut);font-size:13px;font-weight:600;text-decoration:underline">Политика конфиденциальности</button><button id="termsBtn" style="background:none;border:0;padding:6px;color:var(--mut);font-size:13px;font-weight:600;text-decoration:underline">Соглашение</button><button id="pricingBtn" style="background:none;border:0;padding:6px;color:var(--mut);font-size:13px;font-weight:600;text-decoration:underline">Тарифы</button></div>
   </div>
 </div>
@@ -801,7 +801,12 @@ function renderPlans(app){
     [ (p.max_atv===1?'1 единица техники':'До '+p.max_atv+' единиц техники'),(p.max_rec?'До '+p.max_rec+' записей всего: обслуживание, запчасти, покупки, документы':'Записи, запчасти, покупки, документы — без лимита'),'Фото чеков и запчастей: '+gb(p.photo_bytes),'Видео в галерее: '+gb(p.video_bytes),'Один ролик: до 50 МБ']
       .concat(p.perks||[]).forEach(function(x){var li=el('li');li.appendChild(ico('check'));li.appendChild(el('span','',x));ul.appendChild(li)});
     c.appendChild(ul);
-    if(!cur&&p.id!=='free'){var bt=el('button','g','Оплата появится скоро');bt.disabled=true;bt.style.cssText='width:100%;margin-top:12px;opacity:.7';c.appendChild(bt)}
+    if(p.id!=='free'&&p.price_rub&&!(PLAN&&PLAN.admin)){
+      var hi=PLAN&&!cur&&PLAN.id!=='free'&&((PLANS.find(function(q){return q.id===PLAN.id})||{}).sort>p.sort);
+      var bt=el('button',hi?'g':'add');bt.style.cssText='width:100%;margin:12px 0 0';
+      if(hi){bt.textContent='У вас тариф выше';bt.disabled=true;bt.style.opacity='.7'}
+      else{bt.textContent=(cur?'Продлить':'Оплатить')+' · '+p.price_rub+' ₽ за 30 дней';bt.onclick=function(){payPlan(p,bt)}}
+      c.appendChild(bt)}
     app.appendChild(c);
   });
   var nt=el('div','mut');nt.style.cssText='font-size:13px;margin:4px 4px 14px;line-height:1.5';
@@ -827,7 +832,27 @@ function renderPlans(app){
   };
   w.appendChild(inp);w.appendChild(go);pc.appendChild(w);pc.appendChild(res);app.appendChild(pc);
 }
-function openUrl(u){var full=/^https?:/.test(u)?u:location.origin+u;var tg=window.Telegram&&Telegram.WebApp;if(tg&&tg.openLink)tg.openLink(full);else window.open(full,'_blank')}
+function payPlan(p,bt){
+  var old=bt.textContent;bt.disabled=true;bt.textContent='Создаём платёж…';
+  fetch(SUPA_URL+'/functions/v1/pay',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+TOK},body:JSON.stringify({action:'create',plan:p.id})})
+    .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||('ошибка '+r.status));return j})})
+    .then(function(j){
+      S.payWait=true;S.payBefore=PLAN&&PLAN.until;S.payTries=0;
+      openUrl(j.url);
+      bt.disabled=false;bt.textContent='Ждём оплату… вернитесь сюда после оплаты';
+    })
+    .catch(function(e){alert(e.message==='Failed to fetch'?'Не удалось связаться с сервером оплаты. Попробуйте ещё раз или напишите '+POLICY.contact:e.message);bt.disabled=false;bt.textContent=old});
+}
+function payPoll(){
+  if(!S.payWait||!sb)return;
+  loadPlan().then(function(){
+    if(PLAN&&PLAN.until&&PLAN.until!==S.payBefore){S.payWait=false;
+      getUsage().then(r2usage).then(function(){alert('Оплата прошла! Тариф «'+PLAN.name+'» действует до '+new Date(PLAN.until).toLocaleDateString('ru-RU')+'.');render()})}
+    else if(++S.payTries<24)setTimeout(payPoll,5000);
+  });
+}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&S.payWait){S.payTries=0;payPoll()}});
+function openUrl(u){var full=/^https?:/.test(u)?u:location.origin+u;var tg=window.Telegram&&Telegram.WebApp;if(tg&&tg.initData&&tg.openLink)tg.openLink(full);else location.href=full}
 function genCode(){var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';var r=new Uint32Array(8);crypto.getRandomValues(r);for(var i=0;i<8;i++){s+=a[r[i]%a.length];if(i===3)s+='-'}return 'GARAGE-'+s}
 var PROMOS=null;
 function loadPromos(){return sb.from('promo_codes').select('*').order('created',{ascending:false}).then(function(r){PROMOS=r.error?[]:r.data;if(S.sec==='promo')render()})}
