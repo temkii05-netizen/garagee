@@ -1271,14 +1271,14 @@ function renderDocs(app,a){
 
 /* ---------- участники, установка, перенос ---------- */
 function startAdmin(){
-  Promise.all([sb.from('profiles').select('*'),sb.from('items').select('id,owner,data'),sb.rpc('all_usage'),sb.from('files').select('owner,size')]).then(function(rs){
-    if(rs[0].error||rs[1].error)return;
+  return Promise.all([sb.from('profiles').select('*'),sb.from('items').select('id,owner,data'),sb.rpc('all_usage'),sb.from('files').select('owner,size')]).then(function(rs){
+    if(rs[0].error||rs[1].error)return false;
     ALL=rs[1].data;ADM={};var us={},r2={};((rs[3]&&rs[3].data)||[]).forEach(function(x){r2[x.owner]=(r2[x.owner]||0)+Number(x.size)});((rs[2]&&rs[2].data)||[]).forEach(function(x){us[x.user_id]=Number(x.used)});
     rs[0].data.forEach(function(p){ADM[p.id]={name:p.name||'Без имени',user:p.username?'@'+p.username:'',
       prof:{visits:p.visits,lastSeen:p.last_seen?new Date(p.last_seen).getTime():0},
-      used:us[p.id]||0,r2:r2[p.id]||0,plan:p.plan_until,rows:ALL.filter(function(x){return x.owner===p.id})}});
-    if(S.sec==='adm')render();
-  });
+      used:us[p.id]||0,r2:r2[p.id]||0,plan:p.plan_until,pid:p.plan,rows:ALL.filter(function(x){return x.owner===p.id})}});
+    if(S.sec==='adm')render();return true;
+  }).catch(function(){return false});
 }
 function fdt(ts){if(!ts)return '—';var d=new Date(ts);return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
 function bigImg(src){
@@ -1325,8 +1325,9 @@ function renderAdmin(app){
   var cnt=function(t){return ALL.filter(function(x){return x.data.t===t}).length};
   var top=el('div','row');
   top.appendChild(el('span','mut','Участников: '+ids.length+' · техники: '+cnt('atv')+' · записей: '+cnt('rec')));
-  var rf=el('button','g','↻ Обновить');rf.onclick=function(){startAdmin()};top.appendChild(rf);
-  top.style.marginBottom='10px';app.appendChild(top);
+  var rf=el('button','g','↻ Обновить');rf.onclick=function(){rf.disabled=true;rf.textContent='Обновляю…';startAdmin().then(function(ok){S.admMsg=ok?'✓ Обновлено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'Не удалось обновить, попробуйте ещё раз';render()})};top.appendChild(rf);
+  if(S.admMsg){var am=el('div','mut',S.admMsg);am.style.margin='-4px 0 8px';app.appendChild(top);app.appendChild(am);top=null}
+  if(top){top.style.marginBottom='10px';app.appendChild(top)}
   if(!ids.length){app.appendChild(el('div','empty','Пока никого нет.'));return}
 
   var h=el('b','','Участники');h.style.cssText='display:block;margin:6px 0';app.appendChild(h);
@@ -1335,7 +1336,7 @@ function renderAdmin(app){
     var nb=el('b','',o.name+(u===UID?' (вы)':''));rw.appendChild(nb);
     rw.appendChild(el('span','mut',(o.user?o.user+' · ':'')+'заходов: '+(o.prof.visits||0)));c.appendChild(rw);
     c.appendChild(el('div','mut','Последний вход: '+fdt(o.prof.lastSeen)));
-    c.appendChild(el('div','mut','Чеки и фото: '+mb(o.used||0)+' МБ · галерея: '+gb(o.r2||0)+' · '+(o.plan&&new Date(o.plan)>new Date()?'подписка до '+new Date(o.plan).toLocaleDateString('ru-RU'):'бесплатный')));
+    c.appendChild(el('div','mut','Чеки и фото: '+mb(o.used||0)+' МБ · галерея: '+gb(o.r2||0)+' · '+(u===UID&&ME.owner?'владелец · Максимум':o.plan&&new Date(o.plan)>new Date()?(({standard:'Стандарт',max:'Максимум'})[o.pid]||'тариф')+' до '+new Date(o.plan).toLocaleDateString('ru-RU'):'бесплатный')));
     var rows=o.rows.map(function(x){return x.data}),n=function(t){return rows.filter(function(i){return i.t===t})};
     var av=n('atv');
     av.forEach(function(a){c.appendChild(el('span','chip',icon(a)+' '+a.name+(a.odo?' · '+a.odo+' '+a.unit:'')))});
