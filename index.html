@@ -793,7 +793,8 @@ function planCard(app){
 }
 function renderPlans(app){
   if(!PLANS){app.appendChild(el('div','empty','Загрузка…'));
-    sb.from('plans').select('*').order('sort').then(function(r){PLANS=r.error?[]:r.data;if(S.sec==='plans')render()});return}
+    Promise.all([sb.from('plans').select('*').order('sort'),sb.from('payments').select('id').eq('applied',true).eq('owner',UID).limit(1)]).then(function(r){PLANS=r[0].error?[]:r[0].data;PAID=!r[1].error&&r[1].data.length>0;if(S.sec==='plans')render()});return}
+  if(PAID===null&&sb&&UID){PAID=false;sb.from('payments').select('id').eq('applied',true).eq('owner',UID).limit(1).then(function(r){PAID=!r.error&&r.data.length>0;if(PAID&&S.sec==='plans')render()})}
   PLANS.forEach(function(p){
     var cur=PLAN&&PLAN.id===p.id,c=el('div','card plan'+(cur?' cur':'')),t=el('div','pt');
     t.appendChild(el('b','',p.name));t.appendChild(cur?el('span','tag','Ваш тариф'):el('span','pr',p.price_rub?p.price_rub+' ₽/мес':p.id==='free'?'0 ₽':'цена скоро'));c.appendChild(t);
@@ -802,10 +803,11 @@ function renderPlans(app){
       .concat(p.perks||[]).forEach(function(x){var li=el('li');li.appendChild(ico('check'));li.appendChild(el('span','',x));ul.appendChild(li)});
     c.appendChild(ul);
     if(p.id!=='free'&&p.price_rub&&!(PLAN&&PLAN.admin)){
-      var hi=PLAN&&!cur&&PLAN.id!=='free'&&((PLANS.find(function(q){return q.id===PLAN.id})||{}).sort>p.sort);
-      var bt=el('button',hi?'g':'add');bt.style.cssText='width:100%;margin:12px 0 0';
-      if(hi){bt.textContent='У вас тариф выше';bt.disabled=true;bt.style.opacity='.7'}
-      else{bt.textContent=(cur?'Продлить':'Оплатить')+' · '+p.price_rub+' ₽ за 30 дней';bt.onclick=function(){payPlan(p,bt)}}
+      var act=PLAN&&PLAN.id!=='free'&&PLAN.until&&new Date(PLAN.until)>new Date(),lock=act&&!cur&&PAID;
+      var bt=el('button',lock?'g':'add');bt.style.cssText='width:100%;margin:12px 0 0';
+      if(lock){bt.textContent='Доступно после окончания тарифа ('+new Date(PLAN.until).toLocaleDateString('ru-RU')+')';bt.disabled=true;bt.style.opacity='.7'}
+      else{bt.textContent=(cur&&act?'Продлить':'Оплатить')+' · '+p.price_rub+' ₽ за 30 дней';
+        bt.onclick=function(){if(act&&!cur&&!confirm('Сейчас у вас пробный период «'+PLAN.name+'». После оплаты он закончится и сразу включится «'+p.name+'» на 30 дней. Продолжить?'))return;payPlan(p,bt)}}
       c.appendChild(bt)}
     app.appendChild(c);
   });
@@ -846,7 +848,7 @@ function payPlan(p,bt){
 function payPoll(){
   if(!S.payWait||!sb)return;
   loadPlan().then(function(){
-    if(PLAN&&PLAN.until&&PLAN.until!==S.payBefore){S.payWait=false;
+    if(PLAN&&PLAN.until&&PLAN.until!==S.payBefore){S.payWait=false;PAID=true;
       getUsage().then(r2usage).then(function(){alert('Оплата прошла! Тариф «'+PLAN.name+'» действует до '+new Date(PLAN.until).toLocaleDateString('ru-RU')+'.');render()})}
     else if(++S.payTries<24)setTimeout(payPoll,5000);
   });
@@ -854,7 +856,7 @@ function payPoll(){
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&S.payWait){S.payTries=0;payPoll()}});
 function openUrl(u){var full=/^https?:/.test(u)?u:location.origin+u;var tg=window.Telegram&&Telegram.WebApp;if(tg&&tg.initData&&tg.openLink)tg.openLink(full);else location.href=full}
 function genCode(){var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';var r=new Uint32Array(8);crypto.getRandomValues(r);for(var i=0;i<8;i++){s+=a[r[i]%a.length];if(i===3)s+='-'}return 'GARAGE-'+s}
-var PROMOS=null;
+var PROMOS=null,PAID=null;
 function loadPromos(){return sb.from('promo_codes').select('*').order('created',{ascending:false}).then(function(r){PROMOS=r.error?[]:r.data;if(S.sec==='promo')render()})}
 function renderPromos(app){
   if(!PLANS){sb.from('plans').select('*').order('sort').then(function(r){PLANS=r.error?[]:r.data;render()})}
