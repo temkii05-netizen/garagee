@@ -651,7 +651,7 @@ var HELP=[
  ['gauge','Обновляйте пробег',['Кнопка «Обновить пробег» в карточке техники. Если пробег не обновлялся больше месяца, кнопка станет жёлтой.']],
  ['cog','Запчасти, покупки, шины, расходы',['Запчасти — артикулы, цены, магазин. Кнопка «Купить» добавит деталь в покупки.','Покупки — что нужно заказать, купленное отмечайте галочкой.','Шины (у машин) — комплекты зима/лето, кнопка «Поставить» отмечает текущие.','Расходы — сколько потрачено за год и по месяцам.']],
  ['doc','Документы',['Вкладка «Документы»: личные (права, паспорт), для каждой машины и мотоцикла.','Укажите срок действия — приложение подсветит, когда он подходит. Можно сразу сфотографировать документ, даже обе стороны.','Документы и их фото видны только вам.']],
- ['image','Галерея: видео и фото',['Видео до 50 МБ за один файл и фото покатушек. Видео больше 20 МБ смотрите кнопкой «Отправить в чат с ботом».','⚠️ Пока видео загружается, не сворачивайте приложение и не переключайтесь в другие чаты — телефон оборвёт загрузку. Дождитесь, пока видео появится в галерее.']],
+ ['image','Галерея: видео и фото',['Видео и фото покатушек. Один ролик — до 50 МБ на бесплатном тарифе и до 2 ГБ на платных. Видео больше 20 МБ смотрите кнопкой «Отправить в чат с ботом».','⚠️ Пока видео загружается, не сворачивайте приложение и не переключайтесь в другие чаты — телефон оборвёт загрузку. Дождитесь, пока видео появится в галерее.']],
  ['search','Поиск',['Значок лупы вверху: ищет по записям, запчастям, покупкам, документам, шинам и галерее. Нажмите на результат — откроется нужный раздел.']],
  ['bell','Новости',['Колокольчик вверху — новости и обновления приложения. Точка на колокольчике значит, что есть непрочитанное.']],
  ['moon','Тема',['Кнопка с луной (или солнцем) вверху переключает белую и тёмно-синюю тему. Выбор запоминается.']],
@@ -799,7 +799,7 @@ function renderPlans(app){
     var cur=PLAN&&PLAN.id===p.id,c=el('div','card plan'+(cur?' cur':'')),t=el('div','pt');
     t.appendChild(el('b','',p.name));t.appendChild(cur?el('span','tag','Ваш тариф'):el('span','pr',p.price_rub?p.price_rub+' ₽/мес':p.id==='free'?'0 ₽':'цена скоро'));c.appendChild(t);
     var ul=el('ul');
-    [ (p.max_atv===1?'1 единица техники':'До '+p.max_atv+' единиц техники'),(p.max_rec?'До '+p.max_rec+' записей всего: обслуживание, запчасти, покупки, документы':'Записи, запчасти, покупки, документы — без лимита'),'Фото чеков и запчастей: '+gb(p.photo_bytes),'Видео в галерее: '+gb(p.video_bytes),'Один ролик: до 50 МБ']
+    [ (p.max_atv===1?'1 единица техники':'До '+p.max_atv+' единиц техники'),(p.max_rec?'До '+p.max_rec+' записей всего: обслуживание, запчасти, покупки, документы':'Записи, запчасти, покупки, документы — без лимита'),'Фото чеков и запчастей: '+gb(p.photo_bytes),'Видео в галерее: '+gb(p.video_bytes),'Один ролик: до '+(p.video_file>=1e9?'2 ГБ':'50 МБ')]
       .concat(p.perks||[]).forEach(function(x){var li=el('li');li.appendChild(ico('check'));li.appendChild(el('span','',x));ul.appendChild(li)});
     c.appendChild(ul);
     if(p.id!=='free'&&p.price_rub&&!(PLAN&&PLAN.admin)){
@@ -1051,7 +1051,7 @@ function atvPhoto(a){
 /* ---------- галерея ---------- */
 function mediaMeta(a,x){return [fdate(x.date),(by('atv').find(function(q){return q.id===x.atv})||{}).name].filter(Boolean).join(' · ')}
 function gb(n){return n>=1073741824?(n/1073741824).toFixed(2)+' ГБ':mb(n)+' МБ'}
-var FN=SUPA_URL+'/functions/v1/tg-media',TG_VIDEO_MAX=50000000,TG_BIG=20000000;
+var FN=SUPA_URL+'/functions/v1/tg-media',TG_VIDEO_MAX=2000000000,TG_BIG=20000000,TG_DIRECT=45000000;
 function quotaErr(j){return 'Не хватает места: свободно '+gb(Math.max(0,j.quota-j.used))+' из '+gb(j.quota)}
 async function mcall(action,body){
   var r;try{r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+TOK},body:JSON.stringify(Object.assign({action:action},body||{}))})}
@@ -1070,6 +1070,21 @@ function sendFile(file,kind,onp){return new Promise(function(res,rej){
     if(x.status<300)res(j);else rej(new Error(j.error==='quota'?quotaErr(j):(j.error||'Ошибка загрузки ('+x.status+')')))};
   x.onerror=function(){rej(new Error('Запрос оборвался (файл '+Math.round(file.size/1048576*10)/10+' МБ). Возможно, функция не принимает такой размер. Попробуйте файл поменьше.'))};
   x.send(fd)})}
+function loadTus(){return window.tus?Promise.resolve():new Promise(function(res,rej){var sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js';sc.onload=res;sc.onerror=function(){rej(new Error('Не удалось загрузить модуль для больших файлов. Проверьте интернет.'))};document.head.appendChild(sc)})}
+async function bigUpload(file,onp,ons){
+  await loadTus();
+  var ext=((file.name||'').match(/\.(mp4|mov|m4v)$/i)||['.mp4'])[0].toLowerCase(),path=UID+'/'+uid()+ext;
+  await new Promise(function(res,rej){
+    var up=new tus.Upload(file,{endpoint:SUPA_URL+'/storage/v1/upload/resumable',retryDelays:[0,2000,5000,10000,20000,30000,60000],
+      headers:{authorization:'Bearer '+TOK,apikey:SUPA_KEY,'x-upsert':'true'},uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,chunkSize:6*1024*1024,
+      metadata:{bucketName:'vtmp',objectName:path,contentType:file.type||'video/mp4',cacheControl:'3600'},
+      onError:function(e){var m=String(e&&e.message||e);rej(new Error(/413|too large|exceeded/i.test(m)?'Файл слишком большой для вашего тарифа':/401|403|JWT/i.test(m)?'Сессия истекла: закройте и откройте приложение заново':'Загрузка оборвалась. Проверьте интернет и попробуйте ещё раз — загрузка продолжится с места обрыва.'))},
+      onProgress:function(a,b){onp(Math.min(99,Math.round(a/b*100)))},onSuccess:function(){res()}});
+    up.findPreviousUploads().then(function(prev){var pv=prev.find(function(q){return q.metadata&&q.metadata.objectName&&q.metadata.objectName.indexOf(UID+'/')===0});if(pv){path=pv.metadata.objectName;up.options.metadata.objectName=path;up.resumeFromPreviousUpload(pv)}up.start()}).catch(function(){up.start()});
+  });
+  ons('отправка видео в хранилище… не закрывайте приложение');
+  return mcall('ingest',{path:path});
+}
 function drawThumb(src,w,h){
   var k=Math.min(1,480/Math.max(w,h)),cv=document.createElement('canvas');cv.width=Math.round(w*k);cv.height=Math.round(h*k);
   cv.getContext('2d').drawImage(src,0,0,cv.width,cv.height);
@@ -1092,7 +1107,7 @@ function addMedia(a){
     var vid=isVid(file);
     if(!vid&&!isImg(file)){alert('Формат файла не поддерживается. Выберите видео (MP4, MOV) или фото (JPG, PNG, WebP).');return}
     if(vid&&!/\.(mp4|mov|m4v)$/i.test(file.name||'')&&!confirm('Лучше всего работают видео в формате MP4. Другие форматы могут не воспроизводиться в приложении. Загрузить всё равно?'))return;
-    var vmax=Math.min(TG_VIDEO_MAX,(PLAN&&PLAN.video_file)||TG_VIDEO_MAX);if(vid&&file.size>vmax){alert('Видео '+Math.round(file.size/1048576)+' МБ: сейчас можно загружать ролики до '+Math.round(vmax/1e6)+' МБ. Сожмите или обрежьте видео.');return}
+    var vmax=Math.min(TG_VIDEO_MAX,(PLAN&&PLAN.video_file)||50000000);if(vid&&file.size>vmax){alert('Видео '+Math.round(file.size/1048576)+' МБ: сейчас можно загружать ролики до '+Math.round(vmax/1e6)+' МБ. Сожмите или обрежьте видео.');return}
     openForm('Новое в галерее',[['title','Название','text','','Покатушки в лесу'],['date','Дата','date',today()],['notes','Заметки','area']],null,function(d){doUpload(a,file,vid,d)});
   });
 }
@@ -1103,7 +1118,8 @@ async function doUpload(a,file,vid,d){
     await mcall('usage');
     st.textContent='подготовка…';
     var body=vid?file:await toJpeg(file),th=await thumbOf(file,vid);
-    var c=await sendFile(body,vid?'video':'image',function(n){st.textContent='загрузка '+n+'%'}),tp=null;
+    var prog=function(n){st.textContent='загрузка '+n+'%'+(vid&&file.size>TG_DIRECT?' · не сворачивайте':'')},tp=null;
+    var c=(vid&&file.size>TG_DIRECT)?await bigUpload(file,prog,function(t){st.textContent=t}):await sendFile(body,vid?'video':'image',prog);
     if(th){try{tp=(await upl(th)).id}catch(e){}}
     d.t='media';d.atv=a.id;d.kind=vid?'video':'image';d.file=c.key;d.thumb=tp;d.size=c.size;d.store='tg';
     put(uid(),d);r2usage().then(render);
