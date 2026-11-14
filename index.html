@@ -198,7 +198,8 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 <script>SPL(15,'Подключаемся к Telegram…')</script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>SPL(30,'Загружаем приложение…')</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="lib/supabase.min.js"></script>
+<script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"><\/script>')</script>
 <script>SPL(45,'Входим в аккаунт…')</script>
 <script>
 var ME={owner:false},ADM={},items=[],col=null,assets=null,S={grp:null,sec:null,lastGrp:'moto',y:'',m:'',asc:false,open:{}};
@@ -1162,7 +1163,8 @@ function sendFile(file,kind,onp){return new Promise(function(res,rej){
     if(x.status<300)res(j);else rej(new Error(j.error==='quota'?quotaErr(j):(j.error||'Ошибка загрузки ('+x.status+')')))};
   x.onerror=function(){rej(new Error('Запрос оборвался (файл '+Math.round(file.size/1048576*10)/10+' МБ). Возможно, функция не принимает такой размер. Попробуйте файл поменьше.'))};
   x.send(fd)})}
-function loadTus(){return window.tus?Promise.resolve():new Promise(function(res,rej){var sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js';sc.onload=res;sc.onerror=function(){rej(new Error('Не удалось загрузить модуль для больших файлов. Проверьте интернет.'))};document.head.appendChild(sc)})}
+function loadTus(){if(window.tus)return Promise.resolve();function ld(u){return new Promise(function(res,rej){var sc=document.createElement('script');sc.src=u;sc.onload=function(){window.tus?res():rej()};sc.onerror=rej;document.head.appendChild(sc)})}
+  return ld('lib/tus.min.js').catch(function(){return ld('https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js')}).catch(function(){throw new Error('Не удалось загрузить модуль для больших файлов. Проверьте интернет.')})}
 async function bigUpload(file,onp,ons){
   await loadTus();
   var ext=((file.name||'').match(/\.(mp4|mov|m4v)$/i)||['.mp4'])[0].toLowerCase(),path=UID+'/'+uid()+ext;
