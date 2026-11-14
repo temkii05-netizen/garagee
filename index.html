@@ -143,6 +143,16 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 #splash .pc{font-size:28px;font-weight:800;color:var(--tx);font-variant-numeric:tabular-nums}
 #splash .st{font-size:14px;color:var(--mut);min-height:20px;text-align:center}
 @media (prefers-reduced-motion:reduce){#splash .dk *{animation:none!important}}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);box-shadow:var(--sh);border-radius:20px;padding:14px;min-width:0}
+.kpi .l{font-size:13px;color:var(--mut)}.kpi .v{font-size:26px;font-weight:800;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}.kpi .s{font-size:12px;color:var(--mut);margin-top:4px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:22px}
+.bars .b{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bars .b i{display:block;width:100%;border-radius:5px 5px 2px 2px;background:var(--ac);min-height:2px}
+.bars .b.z i{background:var(--bd)}
+.bars .b em{font-style:normal;font-size:10px;font-weight:700;color:var(--tx);margin-bottom:2px;white-space:nowrap}
+.bars .b span{font-size:9px;color:var(--mut);margin-top:4px;white-space:nowrap}
+.srow{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}.srow:last-child{border-bottom:0}.srow b{font-variant-numeric:tabular-nums;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -987,7 +997,47 @@ function renderPolicy(app){
     x[1].split('\n').forEach(function(line){c.appendChild(el('p','',line))});h.appendChild(c)});
   app.appendChild(h);
 }
+var STATS=null;
+function loadStats(){return sb.rpc('admin_stats').then(function(r){STATS=r.error?{err:r.error.message}:Object.assign({at:Date.now()},r.data);if(S.sec==='stats')render()})}
+function rub(n){return Math.round(Number(n)||0).toLocaleString('ru-RU')+' ₽'}
+function renderStats(app){
+  if(!STATS){app.appendChild(el('div','empty','Считаю статистику…'));loadStats();return}
+  if(STATS.err){app.appendChild(el('div','empty',/admin_stats/.test(STATS.err)?'Статистика ещё не подключена на сервере (нужна команда для базы).':'Не удалось загрузить статистику: '+STATS.err));
+    var rb=el('button','g','↻ Повторить');rb.onclick=function(){STATS=null;render()};app.appendChild(rb);return}
+  var T=STATS,pl=T.plans||{},paid=(pl.paid_standard||0)+(pl.paid_max||0),hasPay=T.rev!==undefined;
+  var top=el('div','row');top.appendChild(el('div','mut','Обновлено в '+new Date(T.at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})));
+  var rf=el('button','g','↻ Обновить');rf.onclick=function(){rf.disabled=true;rf.textContent='Обновляю…';loadStats()};top.appendChild(rf);top.style.marginBottom='10px';app.appendChild(top);
+  var k=el('div','kpis');
+  function kpi(l,v,sub){var c=el('div','kpi');c.appendChild(el('div','l',l));c.appendChild(el('div','v',v));if(sub)c.appendChild(el('div','s',sub));k.appendChild(c)}
+  kpi('Пользователей',String(T.users),'+'+T.new_7+' за неделю · +'+T.new_1+' сегодня');
+  kpi('Заходили сегодня',String(T.act_1),'за 7 дней: '+T.act_7+' · за 30: '+T.act_30);
+  kpi('Платят сейчас',String(paid),'на пробном: '+(pl.trial||0)+' · по промокоду: '+(pl.promo||0));
+  kpi('Выручка за 30 дней',hasPay?rub(T.rev_30):'—',hasPay?'всего: '+rub(T.rev):'оплата не подключена');
+  app.appendChild(k);
+  function chart(title,arr,fmt,sum){
+    var c=el('div','card');var h=el('div','row');h.appendChild(el('b','',title));h.appendChild(el('span','mut',sum));c.appendChild(h);
+    var mx=Math.max.apply(null,arr.map(function(x){return Number(x.n)||0}).concat([1])),w=el('div','bars');
+    arr.forEach(function(x,i){var n=Number(x.n)||0,b=el('div','b'+(n?'':' z'));if(n)b.appendChild(el('em','',fmt(n)));
+      var bar=el('i');bar.style.height=(n?Math.max(6,Math.round(n/mx*100)):2)+'%';if(!n)bar.style.height='2px';b.appendChild(bar);
+      b.appendChild(el('span','',(i%2===(arr.length-1)%2)?x.d:' '));b.title=x.d+': '+fmt(n);w.appendChild(b)});
+    c.appendChild(w);app.appendChild(c)}
+  if(T.new_days)chart('Новые пользователи',T.new_days,function(n){return String(n)},'14 дней: '+T.new_days.reduce(function(a,x){return a+(Number(x.n)||0)},0));
+  if(hasPay&&T.rev_days)chart('Выручка по дням',T.rev_days,function(n){return n>=1000?(Math.round(n/100)/10)+'к':String(Math.round(n))},'14 дней: '+rub(T.rev_days.reduce(function(a,x){return a+(Number(x.n)||0)},0)));
+  function list(title,rows){var c=el('div','card');c.appendChild(el('b','',title));rows.forEach(function(r){if(!r)return;var d=el('div','srow');d.appendChild(el('span','',r[0]));d.appendChild(el('b','',r[1]));c.appendChild(d)});app.appendChild(c)}
+  var others=Math.max(0,T.users-(pl.owner||0));
+  var pc=el('div','card');pc.appendChild(el('b','','Тарифы пользователей'));
+  [['Бесплатный',pl.free||0],['Пробный период',pl.trial||0],['По промокоду',pl.promo||0],['Стандарт (оплачен)',pl.paid_standard||0],['Макс (оплачен)',pl.paid_max||0]].forEach(function(r){meter(pc,r[0],r[1],others||1,function(n){return String(n)})});
+  if(T.trial_end_3){var w3=el('div','mut','Тариф заканчивается в ближайшие 3 дня: '+T.trial_end_3);w3.style.cssText='margin-top:10px;font-size:13px';pc.appendChild(w3)}
+  app.appendChild(pc);
+  if(hasPay)list('Оплаты',[['Сегодня',T.pay_n_1+' · '+rub(T.rev_1)],['За 7 дней',T.pay_n_7+' · '+rub(T.rev_7)],['За 30 дней',T.pay_n_30+' · '+rub(T.rev_30)],['За всё время',T.pay_n+' · '+rub(T.rev)],
+    ['Платили хотя бы раз',T.payers+' из '+others+(others?' ('+Math.round(T.payers/others*100)+'%)':'')],T.pay_wait?['Начали оплату, но не завершили (за сутки)',String(T.pay_wait)]:null]);
+  var it=T.items||{};
+  list('Что добавили пользователи',[['Техника',String(it.atv||0)],['Записи обслуживания',String(it.rec||0)],['Запчасти',String(it.part||0)],['Покупки',String(it.buy||0)],['Шины',String(it.tire||0)],['Документы',String(T.docs||0)],
+    ['Фото и видео в галерее',String(it.media||0)],['Активировано промокодов',String(T.promo_uses||0)]]);
+  list('Занятое место',[['Фото чеков и документов (на сервере)',gb(T.photo_bytes||0)],['Видео (в Telegram)',gb(T.video_bytes||0)+' · роликов: '+(T.video_count||0)]]);
+}
 function renderProfile(app){
+  if(S.sec==='stats'&&ME.owner){backBar(app,'Профиль','Статистика');renderStats(app);return}
   if(S.sec==='adm'&&ME.owner){backBar(app,'Профиль','Участники');renderAdmin(app);return}
   if(S.sec==='help'){backBar(app,'Профиль','Инструкция');renderHelp(app);return}
   if(S.sec==='plans'){backBar(app,'Профиль','Тарифы');renderPlans(app);return}
@@ -997,6 +1047,7 @@ function renderProfile(app){
   function row(icn,txt,go){var b=el('button','prow');b.appendChild(ico(icn));b.appendChild(el('span','',txt));b.appendChild(ico('chev'));b.onclick=go;app.appendChild(b)}
   row('book','Как пользоваться приложением',function(){S.sec='help';render();window.scrollTo(0,0)});
   if(ME.owner)row('ticket','Промокоды',function(){S.sec='promo';render();window.scrollTo(0,0)});
+  if(ME.owner)row('gauge','Статистика',function(){S.sec='stats';STATS=null;render();window.scrollTo(0,0)});
   if(ME.owner)row('user','Участники и их записи',function(){S.sec='adm';render();window.scrollTo(0,0)});
   var dk=document.documentElement.getAttribute('data-theme')==='dark';
   row(dk?'sun':'moon',dk?'Включить белую тему':'Включить тёмно-синюю тему',function(){document.getElementById('themeBtn').click();render()});
