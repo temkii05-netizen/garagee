@@ -119,7 +119,9 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 #splash.off{opacity:0;pointer-events:none}
 #splash .dk{width:190px;height:170px;overflow:visible}
 #splash .dk *{transform-box:fill-box}
-#splash .duck{animation:dkBob 2.4s ease-in-out infinite;transform-origin:50% 90%}
+#splash .duck{animation:dkBob 2.4s ease-in-out infinite;transform-origin:50% 100%}
+#splash .look{animation:dkLook 4.8s ease-in-out infinite}
+#splash .brow{animation:dkBrow 4.8s ease-in-out infinite;transform-origin:50% 100%}
 #splash .head{animation:dkHead 4.8s ease-in-out infinite;transform-origin:35% 95%}
 #splash .eye{animation:dkBlink 3.6s infinite;transform-origin:50% 50%}
 #splash .wing{animation:dkWing 4.8s ease-in-out infinite;transform-origin:85% 30%}
@@ -132,7 +134,9 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 #splash .drop2{animation-delay:.12s}
 #splash .wv{animation:spWave 2.2s linear infinite}
 #splash .wv2{animation:spWave 3.4s linear infinite reverse}
-@keyframes dkBob{0%,100%{transform:translateY(0) rotate(-2.5deg)}50%{transform:translateY(-7px) rotate(2.5deg)}}
+@keyframes dkBob{0%,100%{transform:translateY(0) rotate(-2.5deg) scale(1.03,.97)}50%{transform:translateY(-8px) rotate(2.5deg) scale(.98,1.03)}}
+@keyframes dkLook{0%,36%,78%,100%{transform:translate(0,0)}44%,52%{transform:translate(-3px,-2px)}60%,70%{transform:translate(2.5px,1px)}}
+@keyframes dkBrow{0%,40%,76%,100%{transform:translateY(0) rotate(0)}46%,70%{transform:translateY(-4px) rotate(-8deg)}}
 @keyframes dkHead{0%,38%,100%{transform:rotate(0)}46%{transform:rotate(-9deg)}56%{transform:rotate(7deg)}66%{transform:rotate(-4deg)}74%{transform:rotate(0)}}
 @keyframes dkBlink{0%,44%,50%,92%,100%{transform:scaleY(1)}47%,96%{transform:scaleY(.08)}}
 @keyframes dkWing{0%,8%,36%,100%{transform:rotate(0)}12%,20%,28%{transform:rotate(-26deg)}16%,24%,32%{transform:rotate(6deg)}}
@@ -156,24 +160,26 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 <svg class="dk" viewBox="0 0 190 170" aria-hidden="true">
   <defs>
     <clipPath id="spc"><rect x="8" y="118" width="174" height="46" rx="18"/></clipPath>
-    <linearGradient id="dkB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE066"/><stop offset="1" stop-color="#FFC21A"/></linearGradient>
+    <linearGradient id="dkB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE56E"/><stop offset="1" stop-color="#FFC21A"/></linearGradient>
   </defs>
   <g clip-path="url(#spc)"><path class="wv2" d="M-30 130q10-8 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0v40h-280z" fill="#9CC0FF"/></g>
   <ellipse class="rip" cx="92" cy="128" rx="62" ry="9" fill="none" stroke="#9CC0FF" stroke-width="2.5"/>
   <ellipse class="rip rip2" cx="92" cy="128" rx="62" ry="9" fill="none" stroke="#9CC0FF" stroke-width="2.5"/>
-  <g class="duck">
-    <path class="tail" d="M44 96c-12-12-24-12-30-4 10 2 14 12 26 16z" fill="url(#dkB)"/>
+  <g class="duck" stroke="#B86E00" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path class="tail" d="M46 96c-12-13-25-13-32-4 11 2 15 13 28 17z" fill="url(#dkB)"/>
     <ellipse cx="88" cy="104" rx="50" ry="31" fill="url(#dkB)"/>
-    <ellipse cx="96" cy="114" rx="32" ry="15" fill="#FFF0A8" opacity=".75"/>
+    <ellipse cx="96" cy="115" rx="30" ry="13" fill="#FFF3B8" opacity=".8" stroke="none"/>
     <g class="head">
-      <g class="tuft"><path d="M118 34c-5-12 0-19 5-22 0 8 4 12 2 22z" fill="#FFC21A"/><path d="M126 33c0-11 6-16 12-17-3 7 0 12-5 20z" fill="#FFD23F"/></g>
-      <circle cx="124" cy="60" r="28" fill="url(#dkB)"/>
-      <ellipse cx="139" cy="72" rx="6.5" ry="4" fill="#FF9BA8" opacity=".7"/>
-      <path d="M147 57c12-3 21 0 25 6-7 1-16 2-25 2z" fill="#FF8A1F"/>
-      <path class="jaw" d="M147 65c9 0 17 0 23-1-3 6-12 9-23 6z" fill="#F26A00"/>
-      <g class="eye"><ellipse cx="133" cy="52" rx="5.2" ry="6.2" fill="#0F172A"/><circle cx="135" cy="49.6" r="1.9" fill="#fff"/><circle cx="131.6" cy="54.6" r=".9" fill="#fff" opacity=".8"/></g>
+      <g class="tuft"><path d="M117 35c-6-13 0-21 6-24 0 9 5 13 2 24z" fill="#FFC21A"/><path d="M126 34c0-12 7-18 14-19-3 8 0 13-6 22z" fill="#FFD84A"/></g>
+      <circle cx="124" cy="60" r="29" fill="url(#dkB)"/>
+      <ellipse cx="112" cy="46" rx="9" ry="6" fill="#fff" opacity=".45" stroke="none"/>
+      <ellipse cx="140" cy="73" rx="6.5" ry="4" fill="#FF9BA8" opacity=".75" stroke="none"/>
+      <path class="jaw" d="M148 65c9 1 17 0 24-1-3 8-13 11-24 7z" fill="#F26A00"/>
+      <path d="M148 57c13-4 23-1 27 6-8 2-17 3-27 2z" fill="#FF9A2E"/>
+      <g class="look"><g class="eye" stroke="none"><ellipse cx="133" cy="52" rx="6" ry="7.2" fill="#0F172A"/><circle cx="135.4" cy="49.2" r="2.3" fill="#fff"/><circle cx="131.4" cy="55.2" r="1" fill="#fff" opacity=".8"/></g></g>
+      <path class="brow" d="M125 40c4-4 10-5 15-2" fill="none" stroke="#8A5200" stroke-width="3.2"/>
     </g>
-    <g class="wing"><path d="M58 98c8-14 36-16 46-2-6 18-34 22-46 2z" fill="#F5AE00"/><path d="M66 100c8-7 22-8 30-2" fill="none" stroke="#E09A00" stroke-width="2" stroke-linecap="round"/></g>
+    <g class="wing"><path d="M58 98c8-15 37-17 47-2-6 19-35 23-47 2z" fill="#F7B500"/><path d="M68 100c8-7 21-8 29-2" fill="none" stroke="#C98800" stroke-width="2.2"/></g>
   </g>
   <circle class="drop" style="--dx:-14px" cx="60" cy="122" r="3" fill="#6FA3FF"/>
   <circle class="drop drop2" style="--dx:-24px" cx="52" cy="124" r="2.2" fill="#9CC0FF"/>
