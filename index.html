@@ -2,12 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<script src="config.js"></script>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="theme-color" content="#FFFFFF">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Гараж">
@@ -118,9 +115,91 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 .tag{display:inline-block;background:var(--ac);color:var(--acx);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800}
 .meter{margin-top:10px}.meter .row{font-size:13px}.meter i{display:block;height:7px;border-radius:4px;background:var(--bd);overflow:hidden;margin-top:4px}.meter i em{display:block;height:100%;background:var(--ac)}
 .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;font-weight:800;letter-spacing:.06em}
+#splash{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;transition:opacity .35s}
+#splash.off{opacity:0;pointer-events:none}
+#splash .dk{width:190px;height:170px;overflow:visible}
+#splash .dk *{transform-box:fill-box}
+#splash .duck{animation:dkBob 2.4s ease-in-out infinite;transform-origin:50% 90%}
+#splash .head{animation:dkHead 4.8s ease-in-out infinite;transform-origin:35% 95%}
+#splash .eye{animation:dkBlink 3.6s infinite;transform-origin:50% 50%}
+#splash .wing{animation:dkWing 4.8s ease-in-out infinite;transform-origin:85% 30%}
+#splash .tail{animation:dkTail 1.2s ease-in-out infinite;transform-origin:100% 80%}
+#splash .jaw{animation:dkQuack 4.8s ease-in-out infinite;transform-origin:0% 0%}
+#splash .tuft{animation:dkTuft 2.4s ease-in-out infinite;transform-origin:50% 100%}
+#splash .rip{animation:dkRip 2.4s ease-out infinite;transform-origin:50% 50%}
+#splash .rip2{animation-delay:1.2s}
+#splash .drop{animation:dkDrop 4.8s ease-out infinite;opacity:0}
+#splash .drop2{animation-delay:.12s}
+#splash .wv{animation:spWave 2.2s linear infinite}
+#splash .wv2{animation:spWave 3.4s linear infinite reverse}
+@keyframes dkBob{0%,100%{transform:translateY(0) rotate(-2.5deg)}50%{transform:translateY(-7px) rotate(2.5deg)}}
+@keyframes dkHead{0%,38%,100%{transform:rotate(0)}46%{transform:rotate(-9deg)}56%{transform:rotate(7deg)}66%{transform:rotate(-4deg)}74%{transform:rotate(0)}}
+@keyframes dkBlink{0%,44%,50%,92%,100%{transform:scaleY(1)}47%,96%{transform:scaleY(.08)}}
+@keyframes dkWing{0%,8%,36%,100%{transform:rotate(0)}12%,20%,28%{transform:rotate(-26deg)}16%,24%,32%{transform:rotate(6deg)}}
+@keyframes dkTail{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+@keyframes dkQuack{0%,48%,62%,100%{transform:rotate(0)}52%,58%{transform:rotate(16deg)}55%{transform:rotate(4deg)}}
+@keyframes dkTuft{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}
+@keyframes dkRip{0%{transform:scale(.35);opacity:.7}100%{transform:scale(1.25);opacity:0}}
+@keyframes dkDrop{0%,10%{transform:translate(0,0);opacity:0}14%{opacity:1}30%{transform:translate(var(--dx),-26px);opacity:1}40%,100%{transform:translate(calc(var(--dx)*1.5),4px);opacity:0}}
+@keyframes spWave{from{transform:translateX(0)}to{transform:translateX(-40px)}}
+#splash .ttl{font-size:22px;font-weight:800;color:var(--tx);letter-spacing:-.2px}
+#splash .bar{width:min(260px,70vw);height:10px;border-radius:99px;background:var(--soft);overflow:hidden}
+#splash .bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--ac);transition:width .25s ease-out}
+#splash .pc{font-size:28px;font-weight:800;color:var(--tx);font-variant-numeric:tabular-nums}
+#splash .st{font-size:14px;color:var(--mut);min-height:20px;text-align:center}
+@media (prefers-reduced-motion:reduce){#splash .dk *{animation:none!important}}
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-live="polite">
+<script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
+<svg class="dk" viewBox="0 0 190 170" aria-hidden="true">
+  <defs>
+    <clipPath id="spc"><rect x="8" y="118" width="174" height="46" rx="18"/></clipPath>
+    <linearGradient id="dkB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE066"/><stop offset="1" stop-color="#FFC21A"/></linearGradient>
+  </defs>
+  <g clip-path="url(#spc)"><path class="wv2" d="M-30 130q10-8 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0v40h-280z" fill="#9CC0FF"/></g>
+  <ellipse class="rip" cx="92" cy="128" rx="62" ry="9" fill="none" stroke="#9CC0FF" stroke-width="2.5"/>
+  <ellipse class="rip rip2" cx="92" cy="128" rx="62" ry="9" fill="none" stroke="#9CC0FF" stroke-width="2.5"/>
+  <g class="duck">
+    <path class="tail" d="M44 96c-12-12-24-12-30-4 10 2 14 12 26 16z" fill="url(#dkB)"/>
+    <ellipse cx="88" cy="104" rx="50" ry="31" fill="url(#dkB)"/>
+    <ellipse cx="96" cy="114" rx="32" ry="15" fill="#FFF0A8" opacity=".75"/>
+    <g class="head">
+      <g class="tuft"><path d="M118 34c-5-12 0-19 5-22 0 8 4 12 2 22z" fill="#FFC21A"/><path d="M126 33c0-11 6-16 12-17-3 7 0 12-5 20z" fill="#FFD23F"/></g>
+      <circle cx="124" cy="60" r="28" fill="url(#dkB)"/>
+      <ellipse cx="139" cy="72" rx="6.5" ry="4" fill="#FF9BA8" opacity=".7"/>
+      <path d="M147 57c12-3 21 0 25 6-7 1-16 2-25 2z" fill="#FF8A1F"/>
+      <path class="jaw" d="M147 65c9 0 17 0 23-1-3 6-12 9-23 6z" fill="#F26A00"/>
+      <g class="eye"><ellipse cx="133" cy="52" rx="5.2" ry="6.2" fill="#0F172A"/><circle cx="135" cy="49.6" r="1.9" fill="#fff"/><circle cx="131.6" cy="54.6" r=".9" fill="#fff" opacity=".8"/></g>
+    </g>
+    <g class="wing"><path d="M58 98c8-14 36-16 46-2-6 18-34 22-46 2z" fill="#F5AE00"/><path d="M66 100c8-7 22-8 30-2" fill="none" stroke="#E09A00" stroke-width="2" stroke-linecap="round"/></g>
+  </g>
+  <circle class="drop" style="--dx:-14px" cx="60" cy="122" r="3" fill="#6FA3FF"/>
+  <circle class="drop drop2" style="--dx:-24px" cx="52" cy="124" r="2.2" fill="#9CC0FF"/>
+  <circle class="drop drop2" style="--dx:-4px" cx="66" cy="124" r="1.8" fill="#9CC0FF"/>
+  <g clip-path="url(#spc)"><path class="wv" d="M-30 136q10-8 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0v40h-280z" fill="#2563EB"/></g>
+</svg>
+<div class="ttl">Гараж</div>
+<div class="bar"><i id="spBar"></i></div>
+<div class="pc" id="spPc">0%</div>
+<div class="st" id="spSt">Запускаем…</div>
+</div>
+<script>
+(function(){
+  var cur=0,goal=8,done=false,box=document.getElementById('splash'),bar=document.getElementById('spBar'),pc=document.getElementById('spPc'),st=document.getElementById('spSt');
+  function paint(){var v=Math.round(cur);bar.style.width=v+'%';pc.textContent=v+'%'}
+  var t=setInterval(function(){
+    if(cur<goal)cur+=Math.max(.6,(goal-cur)*.18);          // быстро догоняем цель этапа
+    else if(!done&&cur<goal+9&&cur<99)cur+=.08;              // и чуть ползём дальше, пока этап идёт
+    if(cur>100)cur=100;paint();
+    if(done&&cur>=100){clearInterval(t);box.classList.add('off');setTimeout(function(){box.remove()},400)}
+  },50);
+  var slow=false;setTimeout(function(){if(!done&&box.parentNode){slow=true;st.textContent='Медленное соединение… Если не грузится, попробуйте мобильный интернет или другой Wi-Fi.'}},12000);
+  window.SPL=function(p,label){if(p>goal)goal=p;if(label&&!slow)st.textContent=label;if(p>=100)done=true};
+  window.SPLoff=function(){done=true;clearInterval(t);box.classList.add('off');setTimeout(function(){if(box.parentNode)box.remove()},400)};
+})();
+</script>
 <div class="wrap">
   <div class="hd"><h1>Гараж</h1><span class="mut" id="sync" style="flex:1"></span><button class="tgl" id="bellBtn" aria-label="Новости приложения"></button><button class="tgl" id="searchBtn" aria-label="Поиск"></button><button class="tgl" id="themeBtn" aria-label="Сменить тему"></button></div>
   <div id="app"></div>
@@ -132,6 +211,12 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
   </div>
 </div>
 <div id="m"><div id="mb"></div></div>
+<script src="config.js"></script>
+<script>SPL(15,'Подключаемся к Telegram…')</script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>SPL(30,'Загружаем приложение…')</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>SPL(45,'Входим в аккаунт…')</script>
 <script>
 var ME={owner:false},ADM={},items=[],col=null,assets=null,S={grp:null,sec:null,lastGrp:'moto',y:'',m:'',asc:false,open:{}};
 var $=function(s){return document.querySelector(s)};
@@ -147,7 +232,7 @@ function by(t){return items.filter(function(i){return i.t===t})}
 var SUPA_URL=(window.CFG||{}).url||'',SUPA_KEY=(window.CFG||{}).key||'';   // значения лежат в config.js
 SUPA_URL=SUPA_URL.replace(/\/(functions|rest|auth|storage)\/.*$/,'').replace(/\/+$/,'');
 var R2U={used:0,quota:0},TOK='',USAGE={used:0,quota:0,premium:false},sb=null,UID=null,ALL=[],BASE=SUPA_URL+'/storage/v1/object/public/media/';
-function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t))}
+function msg(t){var a=$('#app');a.textContent='';a.appendChild(el('div','empty',t));if(t!=='Загрузка…'&&window.SPLoff)SPLoff()}
 function mark(r){
   if(r&&r.error){var m=r.error.message||'';$('#sync').textContent='ошибка сохранения';
     alert(m.indexOf('Лимит')===0?m:'Не удалось сохранить: '+m);reloadItems();return}
@@ -198,19 +283,22 @@ async function init(){
     stage='вход через функцию tg-auth';
     var r=await fetch(SUPA_URL+'/functions/v1/tg-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY},body:JSON.stringify({initData:tg.initData})});
     var j=await r.json();if(!r.ok||!j.access_token)throw new Error(j.error||'ошибка входа');
+    SPL(65,'Загружаем вашу технику…');
     stage='подключение к данным';
     var tok=j.access_token;TOK=tok;UID=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub;
     sb=supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{Authorization:'Bearer '+tok}}});
     ME.uid=UID;ME.owner=!!j.admin;col=true;assets={upload:upl,delete:rmf};
     stage='загрузка данных (таблица items)';var q=await sb.from('items').select('id,owner,data');if(q.error)throw q.error;
+    SPL(82,'Загружаем документы…');
     ALL=q.data;items=q.data.filter(function(x){return x.owner===UID}).map(function(x){return Object.assign({id:x.id},x.data)});
     try{var dq=await sb.from('documents').select('id,owner,data').eq('owner',UID);if(!dq.error)items=items.concat(dq.data.map(function(x){return Object.assign({id:x.id},x.data)}))}catch(e){}
     $('#sync').textContent='☁️ сохранено';
+    SPL(92,'Почти готово…');
     try{await getUsage()}catch(e){}
     r2usage();
     loadNews();loadPlan();
     if(ME.owner)startAdmin();
-    clearTimeout(wd);render();
+    clearTimeout(wd);render();SPL(100,'Готово!');
   }catch(e){clearTimeout(wd);msg('Не удалось войти ['+stage+']: '+(e.message||e)+' · адрес: '+SUPA_URL)}
 }
 
