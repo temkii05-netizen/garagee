@@ -117,35 +117,26 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;font-weight:800;letter-spacing:.06em}
 #splash{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;transition:opacity .35s}
 #splash.off{opacity:0;pointer-events:none}
-#splash .dk{width:190px;height:170px;overflow:visible}
+#splash .dk{width:240px;height:165px;overflow:visible}
 #splash .dk *{transform-box:fill-box}
-#splash .duck{animation:dkBob 2.4s ease-in-out infinite;transform-origin:50% 100%}
-#splash .look{animation:dkLook 4.8s ease-in-out infinite}
-#splash .brow{animation:dkBrow 4.8s ease-in-out infinite;transform-origin:50% 100%}
-#splash .head{animation:dkHead 4.8s ease-in-out infinite;transform-origin:35% 95%}
-#splash .eye{animation:dkBlink 3.6s infinite;transform-origin:50% 50%}
-#splash .wing{animation:dkWing 4.8s ease-in-out infinite;transform-origin:85% 30%}
-#splash .tail{animation:dkTail 1.2s ease-in-out infinite;transform-origin:100% 80%}
-#splash .jaw{animation:dkQuack 4.8s ease-in-out infinite;transform-origin:0% 0%}
-#splash .tuft{animation:dkTuft 2.4s ease-in-out infinite;transform-origin:50% 100%}
-#splash .rip{animation:dkRip 2.4s ease-out infinite;transform-origin:50% 50%}
-#splash .rip2{animation-delay:1.2s}
-#splash .drop{animation:dkDrop 4.8s ease-out infinite;opacity:0}
-#splash .drop2{animation-delay:.12s}
-#splash .wv{animation:spWave 2.2s linear infinite}
-#splash .wv2{animation:spWave 3.4s linear infinite reverse}
-@keyframes dkBob{0%,100%{transform:translateY(0) rotate(-2.5deg) scale(1.03,.97)}50%{transform:translateY(-8px) rotate(2.5deg) scale(.98,1.03)}}
-@keyframes dkLook{0%,36%,78%,100%{transform:translate(0,0)}44%,52%{transform:translate(-3px,-2px)}60%,70%{transform:translate(2.5px,1px)}}
-@keyframes dkBrow{0%,40%,76%,100%{transform:translateY(0) rotate(0)}46%,70%{transform:translateY(-4px) rotate(-8deg)}}
-@keyframes dkHead{0%,38%,100%{transform:rotate(0)}46%{transform:rotate(-9deg)}56%{transform:rotate(7deg)}66%{transform:rotate(-4deg)}74%{transform:rotate(0)}}
-@keyframes dkBlink{0%,44%,50%,92%,100%{transform:scaleY(1)}47%,96%{transform:scaleY(.08)}}
-@keyframes dkWing{0%,8%,36%,100%{transform:rotate(0)}12%,20%,28%{transform:rotate(-26deg)}16%,24%,32%{transform:rotate(6deg)}}
-@keyframes dkTail{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
-@keyframes dkQuack{0%,48%,62%,100%{transform:rotate(0)}52%,58%{transform:rotate(16deg)}55%{transform:rotate(4deg)}}
-@keyframes dkTuft{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}
-@keyframes dkRip{0%{transform:scale(.35);opacity:.7}100%{transform:scale(1.25);opacity:0}}
-@keyframes dkDrop{0%,10%{transform:translate(0,0);opacity:0}14%{opacity:1}30%{transform:translate(var(--dx),-26px);opacity:1}40%,100%{transform:translate(calc(var(--dx)*1.5),4px);opacity:0}}
-@keyframes spWave{from{transform:translateX(0)}to{transform:translateX(-40px)}}
+#splash .qd{animation:qdBounce .5s ease-in-out infinite;transform-origin:50% 100%}
+#splash .whl{animation:qdSpin .55s linear infinite;transform-origin:50% 50%}
+#splash .rdr{animation:qdRider .5s ease-in-out infinite;transform-origin:40% 100%}
+#splash .gnd{animation:qdGround .45s linear infinite}
+#splash .dst{animation:qdDust 1s ease-out infinite;transform-origin:50% 50%;opacity:0}
+#splash .dst2{animation-delay:.33s}#splash .dst3{animation-delay:.66s}
+#splash .spd{animation:qdSpeed .7s linear infinite;opacity:0}
+#splash .spd2{animation-delay:.25s}#splash .spd3{animation-delay:.45s}
+#splash .hil{animation:qdHill 6s linear infinite}
+#splash .lgt{animation:qdLight 1.6s ease-in-out infinite}
+@keyframes qdBounce{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-3px) rotate(-1.2deg)}65%{transform:translateY(1.5px) rotate(.8deg)}}
+@keyframes qdRider{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-2px) rotate(-2deg)}75%{transform:translateY(1px) rotate(1.5deg)}}
+@keyframes qdSpin{to{transform:rotate(360deg)}}
+@keyframes qdGround{to{stroke-dashoffset:-36}}
+@keyframes qdDust{0%{transform:translate(0,0) scale(.3);opacity:.75}100%{transform:translate(-46px,-14px) scale(1.5);opacity:0}}
+@keyframes qdSpeed{0%{transform:translateX(0);opacity:0}20%{opacity:.8}100%{transform:translateX(-60px);opacity:0}}
+@keyframes qdHill{to{transform:translateX(-120px)}}
+@keyframes qdLight{0%,100%{opacity:.55}50%{opacity:.9}}
 #splash .ttl{font-size:22px;font-weight:800;color:var(--tx);letter-spacing:-.2px}
 #splash .bar{width:min(260px,70vw);height:10px;border-radius:99px;background:var(--soft);overflow:hidden}
 #splash .bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--ac);transition:width .25s ease-out}
@@ -157,34 +148,41 @@ mark{background:#FDE68A;color:#1F1300;border-radius:3px;padding:0 1px}
 <body>
 <div id="splash" role="status" aria-live="polite">
 <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
-<svg class="dk" viewBox="0 0 190 170" aria-hidden="true">
-  <defs>
-    <clipPath id="spc"><rect x="8" y="118" width="174" height="46" rx="18"/></clipPath>
-    <linearGradient id="dkB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE56E"/><stop offset="1" stop-color="#FFC21A"/></linearGradient>
-  </defs>
-  <g clip-path="url(#spc)"><path class="wv2" d="M-30 130q10-8 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0v40h-280z" fill="#9CC0FF"/></g>
-  <ellipse class="rip" cx="92" cy="128" rx="62" ry="9" fill="none" stroke="#9CC0FF" stroke-width="2.5"/>
-  <ellipse class="rip rip2" cx="92" cy="128" rx="62" ry="9" fill="none" stroke="#9CC0FF" stroke-width="2.5"/>
-  <g class="duck" stroke="#B86E00" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-    <path class="tail" d="M46 96c-12-13-25-13-32-4 11 2 15 13 28 17z" fill="url(#dkB)"/>
-    <ellipse cx="88" cy="104" rx="50" ry="31" fill="url(#dkB)"/>
-    <ellipse cx="96" cy="115" rx="30" ry="13" fill="#FFF3B8" opacity=".8" stroke="none"/>
-    <g class="head">
-      <g class="tuft"><path d="M117 35c-6-13 0-21 6-24 0 9 5 13 2 24z" fill="#FFC21A"/><path d="M126 34c0-12 7-18 14-19-3 8 0 13-6 22z" fill="#FFD84A"/></g>
-      <circle cx="124" cy="60" r="29" fill="url(#dkB)"/>
-      <ellipse cx="112" cy="46" rx="9" ry="6" fill="#fff" opacity=".45" stroke="none"/>
-      <ellipse cx="140" cy="73" rx="6.5" ry="4" fill="#FF9BA8" opacity=".75" stroke="none"/>
-      <path class="jaw" d="M148 65c9 1 17 0 24-1-3 8-13 11-24 7z" fill="#F26A00"/>
-      <path d="M148 57c13-4 23-1 27 6-8 2-17 3-27 2z" fill="#FF9A2E"/>
-      <g class="look"><g class="eye" stroke="none"><ellipse cx="133" cy="52" rx="6" ry="7.2" fill="#0F172A"/><circle cx="135.4" cy="49.2" r="2.3" fill="#fff"/><circle cx="131.4" cy="55.2" r="1" fill="#fff" opacity=".8"/></g></g>
-      <path class="brow" d="M125 40c4-4 10-5 15-2" fill="none" stroke="#8A5200" stroke-width="3.2"/>
+<svg class="dk" viewBox="0 0 240 165" aria-hidden="true">
+  <defs><clipPath id="spc"><rect x="0" y="0" width="240" height="140"/></clipPath></defs>
+  <g clip-path="url(#spc)" opacity=".5"><path class="hil" d="M-10 128q30-34 60 0t60 0 60 0 60 0 60 0 60 0v14h-360z" fill="var(--soft)"/></g>
+  <path class="gnd" d="M4 136h232" stroke="var(--mut)" stroke-width="3" stroke-linecap="round" stroke-dasharray="22 14" opacity=".55"/>
+  <g fill="var(--mut)" opacity=".7"><rect class="spd" x="196" y="52" width="26" height="3" rx="1.5"/><rect class="spd spd2" x="204" y="70" width="18" height="3" rx="1.5"/><rect class="spd spd3" x="190" y="88" width="30" height="3" rx="1.5"/></g>
+  <g fill="#B9C2D0"><circle class="dst" cx="44" cy="128" r="8"/><circle class="dst dst2" cx="40" cy="124" r="6"/><circle class="dst dst3" cx="48" cy="130" r="7"/></g>
+  <g class="qd">
+    <path class="lgt" d="M166 64l66-14v36l-66-12z" fill="#FFD84A" opacity=".6"/>
+    <g stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M30 70h34M38 70v8M56 70v8" fill="none" stroke="#64748B" stroke-width="4"/>
+      <path d="M176 70h30M184 70v8M198 70v8" fill="none" stroke="#64748B" stroke-width="4"/>
+      <rect x="98" y="94" width="42" height="16" rx="5" fill="#64748B"/>
+      <path d="M92 98h54" fill="none" stroke="#475569" stroke-width="5"/>
+      <rect x="94" y="74" width="48" height="24" rx="7" fill="#1D4ED8"/>
+      <path d="M31 108a37 37 0 0 1 74 0h-9a28 28 0 0 0-56 0z" fill="#2563EB"/>
+      <path d="M131 108a37 37 0 0 1 74 0h-9a28 28 0 0 0-56 0z" fill="#2563EB"/>
+      <path d="M205 100l9 2v8h-9" fill="none" stroke="#64748B" stroke-width="4"/>
+      <path d="M118 76c3-13 12-21 27-23l13 23z" fill="#2563EB"/>
+      <rect x="78" y="63" width="46" height="13" rx="6.5" fill="#1F2937"/>
+      <path d="M148 54l-9-19" fill="none" stroke-width="4"/><path d="M131 33h16" fill="none" stroke-width="5"/>
+      <circle cx="161" cy="68" r="6" fill="#FFD84A"/>
     </g>
-    <g class="wing"><path d="M58 98c8-15 37-17 47-2-6 19-35 23-47 2z" fill="#F7B500"/><path d="M68 100c8-7 21-8 29-2" fill="none" stroke="#C98800" stroke-width="2.2"/></g>
+    <g class="rdr" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M98 66l20 5 4 24" fill="none" stroke="#0F172A" stroke-width="13"/><path d="M98 66l20 5 4 24" fill="none" stroke="#334155" stroke-width="8"/>
+      <path d="M94 66c-4-14 0-26 12-32l13 8c-6 6-8 14-6 24z" fill="#F97316"/>
+      <path d="M113 40l23-5" fill="none" stroke="#0F172A" stroke-width="12"/><path d="M113 40l23-5" fill="none" stroke="#F97316" stroke-width="7"/>
+      <circle cx="115" cy="21" r="14.5" fill="#F8FAFC"/>
+      <path d="M117 15h13c2 4 2 8 0 11h-13z" fill="#1F2937"/>
+      <path d="M102 15c6-10 21-10 27 0" fill="none" stroke="#F97316" stroke-width="4"/>
+    </g>
   </g>
-  <circle class="drop" style="--dx:-14px" cx="60" cy="122" r="3" fill="#6FA3FF"/>
-  <circle class="drop drop2" style="--dx:-24px" cx="52" cy="124" r="2.2" fill="#9CC0FF"/>
-  <circle class="drop drop2" style="--dx:-4px" cx="66" cy="124" r="1.8" fill="#9CC0FF"/>
-  <g clip-path="url(#spc)"><path class="wv" d="M-30 136q10-8 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0v40h-280z" fill="#2563EB"/></g>
+  <g stroke-linecap="round">
+    <g class="whl"><circle cx="68" cy="110" r="24" fill="#1F2937" stroke="#0F172A" stroke-width="3"/><circle cx="68" cy="110" r="24" fill="none" stroke="#475569" stroke-width="7" stroke-dasharray="7 8.08"/><circle cx="68" cy="110" r="10" fill="#CBD5E1" stroke="#0F172A" stroke-width="2.5"/><path d="M68 101v18M59 110h18" stroke="#0F172A" stroke-width="2.5"/></g>
+    <g class="whl"><circle cx="168" cy="110" r="24" fill="#1F2937" stroke="#0F172A" stroke-width="3"/><circle cx="168" cy="110" r="24" fill="none" stroke="#475569" stroke-width="7" stroke-dasharray="7 8.08"/><circle cx="168" cy="110" r="10" fill="#CBD5E1" stroke="#0F172A" stroke-width="2.5"/><path d="M168 101v18M159 110h18" stroke="#0F172A" stroke-width="2.5"/></g>
+  </g>
 </svg>
 <div class="ttl">Гараж</div>
 <div class="bar"><i id="spBar"></i></div>
